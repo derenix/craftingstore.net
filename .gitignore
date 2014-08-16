@@ -1,0 +1,5 @@
+config/config.include.php
+.idea/
+template_c/
+*.gz
+*.md5
