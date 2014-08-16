@@ -7,8 +7,7 @@ class Footer extends aDisplayable
 	{
 		$_SESSION['Index']->assign('FOOTER_VERSION', $_SESSION['Index']->getVersion());
 
-		foreach($_SESSION['Index']->db->Iterate("SELECT Id,Language,Image FROM mc_languages WHERE Id<>'{$_SESSION['Index']->lang->getLangId()}' ORDER BY Language") as $row)
-		{
+		foreach (MySqlDatabase::getInstance()->query("SELECT Id,Language,Image FROM mc_languages WHERE Id<>'{$_SESSION['Index']->lang->getLangId()}' ORDER BY Language") as $row) {
 			$lang[] = array(
 				'Id' => $row->Id,
 				'Language' => $row->Language,
@@ -22,5 +21,3 @@ class Footer extends aDisplayable
 		$_SESSION['Index']->assign('PROJECTNAME', PROJECTNAME);
 	}
 }
-
-?>

@@ -54,20 +54,20 @@ class JSONquery extends JSONAPI
 			return "USER_NOT_FOUND";
 		#end
 
-		$uuid = $_SESSION['Index']->db->getUUID();
+		$uuid = MySqlDatabase::getInstance()->getUUID();
 
 		startTransaction("
 			mc_inventory WRITE,
 			mc_inventory AS i2 WRITE,
 			mc_inventory AS i3 WRITE");
-		$changed = $_SESSION['Index']->db->update("UPDATE mc_inventory SET Locked='$uuid' WHERE Id='$TransferId' AND ShopId='{$this->ShopId}' AND GamerId='$UserId' AND Locked='0' AND TransferTime is NULL LIMIT 1");
+		$changed = MySqlDatabase::getInstance()->update("UPDATE mc_inventory SET Locked='$uuid' WHERE Id='$TransferId' AND ShopId='{$this->ShopId}' AND GamerId='$UserId' AND Locked='0' AND TransferTime is NULL LIMIT 1");
 
 		if(!$changed){
 			rollback();
 			return "ITEM_NOT_FOUND";
 		}
 
-		$InventoryInfo = $_SESSION['Index']->db->fetchOneRow("SELECT ProductId, Amount, (SELECT i2.ProductId FROM mc_inventory AS i2 WHERE i2.ShopId='{$this->ShopId}' AND i2.GamerId='$UserId' AND i2.DisabledUntil>='".time()."' AND i2.ProductId = (SELECT i3.ProductId FROM mc_inventory AS i3 WHERE i3.Id='$TransferId' LIMIT 1) LIMIT 1) AS Disabled FROM mc_inventory WHERE Id='$TransferId' LIMIT 1");
+		$InventoryInfo = MySqlDatabase::getInstance()->fetchOneRow("SELECT ProductId, Amount, (SELECT i2.ProductId FROM mc_inventory AS i2 WHERE i2.ShopId='{$this->ShopId}' AND i2.GamerId='$UserId' AND i2.DisabledUntil>='".time()."' AND i2.ProductId = (SELECT i3.ProductId FROM mc_inventory AS i3 WHERE i3.Id='$TransferId' LIMIT 1) LIMIT 1) AS Disabled FROM mc_inventory WHERE Id='$TransferId' LIMIT 1");
 		if($InventoryInfo->Disabled){
 			rollback();
 			return "ITEM_DISABLED";
@@ -81,15 +81,15 @@ class JSONquery extends JSONAPI
 		try{
 			$results = $this->call($calls['functions'], $calls['params']);
 			if($jsonQuery->lastError){
-				$_SESSION['Index']->db->update("UPDATE mc_inventory SET Locked='0', result='".mysql_real_escape_string(serialize($jsonQuery->lastError))."' WHERE Locked='$uuid' LIMIT 1");
+				MySqlDatabase::getInstance()->update("UPDATE mc_inventory SET Locked='0', result='".mysql_real_escape_string(serialize($jsonQuery->lastError))."' WHERE Locked='$uuid' LIMIT 1");
 				return 'JSON_ERROR';
 			}
 			elseif($results['success']){
-				$_SESSION['Index']->db->update("UPDATE mc_inventory SET Locked='0', TransferTime='".time()."', DisabledUntil='$disabledTime', result='".mysql_real_escape_string(serialize($results))."' WHERE Locked='$uuid' LIMIT 1");
+				MySqlDatabase::getInstance()->update("UPDATE mc_inventory SET Locked='0', TransferTime='".time()."', DisabledUntil='$disabledTime', result='".mysql_real_escape_string(serialize($results))."' WHERE Locked='$uuid' LIMIT 1");
 				return 'TRANSFERED';
 			}
 			else{
-				$_SESSION['Index']->db->update("UPDATE mc_inventory SET Locked='0', result='".mysql_real_escape_string(serialize($results))."' WHERE Locked='$uuid' LIMIT 1");
+				MySqlDatabase::getInstance()->update("UPDATE mc_inventory SET Locked='0', result='".mysql_real_escape_string(serialize($results))."' WHERE Locked='$uuid' LIMIT 1");
 				return 'CONNECTION_ERROR';
 			}
 		}catch(Exception $e){
@@ -100,7 +100,7 @@ class JSONquery extends JSONAPI
 
 	#region Command zu einem kompletten Produkt erstellen
 	private function addProduct(&$calls, $PlayerName, $ShopId, $ProductId, $Amount, $uuid = null){
-		$ProductInfo = $_SESSION['Index']->db->fetchOneRow("SELECT Label,CustomCommand, NeedsPlayerOnline, CustomCommandEnd, CooldownNeedsPlayer, Cooldown, CooldownInterval, DisableDuringCooldown FROM mc_products WHERE Id='$ProductId' AND ShopId='$ShopId'");
+		$ProductInfo = MySqlDatabase::getInstance()->fetchOneRow("SELECT Label,CustomCommand, NeedsPlayerOnline, CustomCommandEnd, CooldownNeedsPlayer, Cooldown, CooldownInterval, DisableDuringCooldown FROM mc_products WHERE Id='$ProductId' AND ShopId='$ShopId'");
 
 		if($uuid != null){
 			$this->addInfoMessage($calls, $uuid, $PlayerName, $ProductInfo->Label, $Amount);
@@ -110,7 +110,7 @@ class JSONquery extends JSONAPI
 		$this->addItemsOfProduct($calls, $PlayerName, $ShopId, $ProductId, $Amount);
 
 		//Enthaltene Produkte ebenfalls hinzufügen
-		foreach($_SESSION['Index']->db->iterate("SELECT ProductId,Amount FROM mc_ProductsInProduct WHERE ShopId='$ShopId' AND ParentProductId='$ProductId'") as $products){
+		foreach(MySqlDatabase::getInstance()->query("SELECT ProductId,Amount FROM mc_ProductsInProduct WHERE ShopId='$ShopId' AND ParentProductId='$ProductId'") as $products){
 			$this->addProduct($calls, $PlayerName, $ShopId, $products->ProductId, $products->Amount);
 		}
 
@@ -191,7 +191,7 @@ class JSONquery extends JSONAPI
 	#end
 	#region Items zu einem Produkt ermitteln
 	private function addItemsOfProduct(&$calls, $PlayerName, $ShopId, $ProductId, $Amount){
-		foreach($_SESSION['Index']->db->iterate("SELECT i.Id, i.Name, i.Ingame, i.MineId, i.Damage, i.Lore, iip.Amount
+		foreach(MySqlDatabase::getInstance()->query("SELECT i.Id, i.Name, i.Ingame, i.MineId, i.Damage, i.Lore, iip.Amount
 			FROM mc_ItemsInProduct AS iip
 			JOIN mc_items AS i
 			ON i.Id=iip.ItemId AND i.ShopId='$ShopId'
@@ -199,7 +199,7 @@ class JSONquery extends JSONAPI
 
 			#region Enchantments ermitteln
 			$enchantments = '';
-			foreach($_SESSION['Index']->db->iterate("SELECT e.Name, eii.Strength
+			foreach(MySqlDatabase::getInstance()->query("SELECT e.Name, eii.Strength
 			FROM mc_EnchInItem AS eii
 			JOIN mc_ench AS e
 			ON e.Id=eii.EnchId AND (e.ShopId='0' OR e.ShopId='$ShopId')
@@ -290,5 +290,3 @@ class JSONquery extends JSONAPI
 	}
 	#end
 }
-
-?>

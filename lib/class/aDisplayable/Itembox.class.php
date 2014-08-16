@@ -15,7 +15,7 @@ class Itembox extends aContentBox
 		$_SESSION['Index']->assign_direct('ITEMBOX_ITEM_NAVIGATION_DISABLED', $this->HideItemNavigation);
 
 		$_SESSION['Index']->assign('ITEMBOX_CONTENT_ITEM_ARRAY', $this->itemList);
-		
+
 		$_SESSION['Index']->assign_say('ITEMBOX_TO_CART');
 		$_SESSION['Index']->assign_say('ITEMBOX_TO_CART_NOW');
 
@@ -25,24 +25,22 @@ class Itembox extends aContentBox
 		$_SESSION['Index']->assign_say('ITEMBOX_ITEM_DETAILS_BUTTON');
 
 		$groupPath = null;
-		foreach($_SESSION['Index']->nstree->getPath($this->groupId) as $row)
-		{
-			if($groupPath === null)
-				$groupPath = array(array('Label' => $_SESSION['Index']->say('ITEMBOX_ROOT_NODE', false), 'BoxUrl' => '?show={Itembox}&groupId='.$row->Id));
+		foreach ($_SESSION['Index']->nstree->getPath($this->groupId) as $row) {
+			if ($groupPath === null)
+				$groupPath = array(array('Label' => $_SESSION['Index']->say('ITEMBOX_ROOT_NODE', false), 'BoxUrl' => '?show={Itembox}&groupId=' . $row->Id));
 			else
-				$groupPath[] = array('Label' => $row->Label, 'BoxUrl' => '?show={Itembox}&groupId='.$row->Id);
+				$groupPath[] = array('Label' => $row->Label, 'BoxUrl' => '?show={Itembox}&groupId=' . $row->Id);
 		}
 		#region letzte Gruppe löschen und ohne Link anzeigen
-		if(count($groupPath) > 1){
-			$_SESSION['Index']->assign_direct('ITEMBOX_CURRENT_GROUP', $groupPath[count($groupPath)-1]['Label']);
-			unset($groupPath[count($groupPath)-1]);
-		}
-		#end
-		else{
+		if (count($groupPath) > 1) {
+			$_SESSION['Index']->assign_direct('ITEMBOX_CURRENT_GROUP', $groupPath[count($groupPath) - 1]['Label']);
+			unset($groupPath[count($groupPath) - 1]);
+		} #end
+		else {
 			$groupPath = null;
 		}
 		$_SESSION['Index']->assign('ITEMBOX_GROUP_PATH', $groupPath);
-		
+
 		$selected = ' selected="selected"';
 
 		$_SESSION['Index']->assign_say('ITEMBOX_SORT_ALPHABET');
@@ -98,55 +96,48 @@ class Itembox extends aContentBox
 	public function setProperties($array)
 	{
 		#region Setzt die private Eigenschaft groupId
-		if(isNumber($array['groupId']))
-		{
+		if (isNumber($array['groupId'])) {
 			$this->groupId = $array['groupId'];
-		}
-		else if(isNumber($_GET['groupId']))#kann auch per GET übergeben werden, dann wird die Suche allerdings gelöscht
+		} else if (isNumber($_GET['groupId'])) #kann auch per GET übergeben werden, dann wird die Suche allerdings gelöscht
 		{
 			$this->groupId = $_GET['groupId'];
 			$this->search = null;
 		}
 		#end
 
-		if($array)
-		{
+		if ($array) {
 			#region Es findet eine Suche statt
-			if(array_key_exists('search', $array))
-			{
-				$this->search = mysql_real_escape_string($array['search']);
+			if (array_key_exists('search', $array)) {
+				$this->search = $array['search'];
 
-				if(isNumber($array['searchgroup'], true)) $this->groupId = $array['searchgroup'];
-				else $this->groupId = null;
+				if (isNumber($array['searchgroup'], true)) {
+					$this->groupId = $array['searchgroup'];
+				} else {
+					$this->groupId = null;
+				}
+
 				#Standardwerte für eine Suche
 				$this->currentPage = 0;
 				$this->sortField = "popular";
 				$this->sortDirection = 'desc';
 			}
 			#end
-		
-			if(array_key_exists('currentPage', $array) && isNumber($array['currentPage'], true))
-			{
+
+			if (array_key_exists('currentPage', $array) && isNumber($array['currentPage'], true)) {
 				$this->currentPage = $array['currentPage'];
 			}
-			if((array_key_exists('sortField', $array)) && (($array['sortField'] == "name") || ($array['sortField'] == "price") || ($array['sortField'] == "popular")))
-			{
+			if ((array_key_exists('sortField', $array)) && (($array['sortField'] == "name") || ($array['sortField'] == "price") || ($array['sortField'] == "popular"))) {
 				$this->sortField = $array['sortField'];
 			}
-			if((array_key_exists('sortDirection', $array)) && (($array['sortDirection'] == "asc") || ($array['sortDirection'] == "desc")))
-			{
+			if ((array_key_exists('sortDirection', $array)) && (($array['sortDirection'] == "asc") || ($array['sortDirection'] == "desc"))) {
 				$this->sortDirection = $array['sortDirection'];
 			}
-			if((array_key_exists('itemsPerPage', $array)) && (($array['itemsPerPage'] == "-1") || (isNumber($array['itemsPerPage']) && ($array['itemsPerPage'] >= 3))))
-			{
+			if ((array_key_exists('itemsPerPage', $array)) && (($array['itemsPerPage'] == "-1") || (isNumber($array['itemsPerPage']) && ($array['itemsPerPage'] >= 3)))) {
 				$this->itemsPerPage = $array['itemsPerPage'];
 			}
-			if($array['noSubgroups'])
-			{
+			if ($array['noSubgroups']) {
 				$this->noSubgroups = true;
-			}
-			else
-			{
+			} else {
 				$this->noSubgroups = false;
 			}
 		}
@@ -160,16 +151,11 @@ class Itembox extends aContentBox
 	#region Gibt das Datenbankfeld zurück, dass dem aktuellen Sortierkriterium entspricht
 	private function getsortFieldSql()
 	{
-		if($this->sortField == "price")
-		{
+		if ($this->sortField == "price") {
 			return "i.Points";
-		}
-		elseif($this->sortField == "popular")
-		{
+		} elseif ($this->sortField == "popular") {
 			return "i.BuyCounter";
-		}
-		else
-		{
+		} else {
 			return "i.Label";
 		}
 	}
@@ -178,21 +164,17 @@ class Itembox extends aContentBox
 	#region Aktualisiert die private Eigenschaft groupList anhand der aktuellen groupId
 	private function refreshGroupList()
 	{
-		if(!$this->groupId)
-		{
+		if (!$this->groupId) {
 			$this->groupList = array();
 			return; #Abbrechen, falls mit der Suche die Gruppenbeschränkung deaktiviert wurde
 		}
 
 		$gruppen = array($this->groupId);
-		if(!$this->noSubgroups)
-		{
+		if (!$this->noSubgroups) {
 			//Zuerst die Untergruppen auslesen
 			$tree = $_SESSION['Index']->nstree->getSubTree($this->groupId);
-			if($tree)
-			{
-				foreach($tree as $row)
-				{
+			if ($tree) {
+				foreach ($tree as $row) {
 					$gruppen[] = $row->Id;
 				}
 			}
@@ -205,58 +187,64 @@ class Itembox extends aContentBox
 	{
 		#region Im Falle einer Suche, wird der Suchstring zerlegt und die Bedingung daraus gebaut
 		$searchQuery = '';
-		if($this->search)
-		{
+		if ($this->search) {
 			$split = explode(' ', $this->search);
-			foreach($split as $part)
-			{
-				$searchQuery .= ' AND i.Label LIKE \'%'.$part.'%\'';
+			foreach ($split as $part) {
+				$searchQuery .= ' AND i.Label LIKE \'%' . $part . '%\'';
 			}
 		}
 		#end
 
 		#region Alle Gruppen zu einem WHERE-Statement für ein MySQL-Statement zusammenbauen
 		$whereGroups = '';
-		foreach($this->groupList as $value)
-		{
-			if($whereGroups)
+		foreach ($this->groupList as $value) {
+			if ($whereGroups)
 				$whereGroups .= ',';
-			$whereGroups .= '\''.$value.'\'';
+			$whereGroups .= '\'' . $value . '\'';
 		}
-		if($whereGroups)
-		{
-			$whereGroups = ' AND i.GroupId IN ('.$whereGroups.')';
+		if ($whereGroups) {
+			$whereGroups = ' AND i.GroupId IN (' . $whereGroups . ')';
 		}
 		#end
 
 		#region Anzahl der Items ermitteln
-		$itemCount = $_SESSION['Index']->db->fetchOne("SELECT COUNT(*) FROM mc_products As i WHERE i.Enabled='1' AND i.ShopId='{$_SESSION['Index']->shop->getId()}'$whereGroups$searchQuery");
+		$query = "SELECT COUNT(*) FROM mc_products As i WHERE i.Enabled='1' AND i.ShopId= :shopId " . $whereGroups . $searchQuery;
 
-		$this->totalPages = ceil($itemCount/$this->itemsPerPage);
-		if(($this->currentPage >= $this->totalPages) && ($this->totalPages > 0))
-		{
+		$itemCount = (int)MySqlDatabase::getInstance()->fetchOne($query, array(
+			"shopId" => $_SESSION['Index']->shop->getId()
+		));
+
+		$this->totalPages = ceil($itemCount / $this->itemsPerPage);
+		if (($this->currentPage >= $this->totalPages) && ($this->totalPages > 0)) {
 			$this->currentPage = $this->totalPages - 1;
 		}
 		#end
 
 		#region Wenn mehr als 0 Items vorhanden sind, dann diese ermitteln und zurückgeben
-		if($itemCount > 0)
-		{
+		if ($itemCount > 0) {
 			$this->itemList = array();
 			//Jetzt die Items, die direkt in dieser Gruppe sind, auslesen
-			if($this->itemsPerPage != -1)
-			{
-				$Limit = " Limit ".($this->currentPage * $this->itemsPerPage).", ".$this->itemsPerPage;
+
+			$Limit = "";
+			if ($this->itemsPerPage != -1) {
+				$Limit = " Limit " . ($this->currentPage * $this->itemsPerPage) . ", " . $this->itemsPerPage;
 			}
-			foreach($_SESSION['Index']->db->iterate("SELECT i.*, g.Label AS GroupLabel FROM mc_products AS i LEFT JOIN mc_productGroups AS g ON i.GroupId=g.Id WHERE i.Enabled='1' AND i.ShopId='{$_SESSION['Index']->shop->getId()}' AND g.ShopId='{$_SESSION['Index']->shop->getId()}'$whereGroups$searchQuery ORDER BY ".$this->getsortFieldSql()." ".$this->sortDirection.$Limit) as $row)
-			{
+
+			$items = MySqlDatabase::getInstance()->query("SELECT i.*, g.Label AS GroupLabel FROM mc_products AS i LEFT JOIN mc_productGroups AS g ON i.GroupId=g.Id WHERE i.Enabled='1' AND i.ShopId= :shopId AND g.ShopId = :shopId " . $whereGroups . $searchQuery . "ORDER BY :sortField :sortDirection :limit", array(
+				"shopId" => $_SESSION['Index']->shop->getId(),
+				"sortField" => $this->getsortFieldSql(),
+				"sortDirection" => $this->sortDirection,
+				"limit" => $Limit
+			));
+
+			foreach ($items as $row) {
 				$this->itemList[] = array(
 					'Id' => $row->Id,
 					'Label' => $row->Label,
 					'GroupLabel' => ($row->GroupId == 1 ? $_SESSION['Index']->say('ADM_ITEM_GROUPS_TOP_NODE') : $row->GroupLabel),
-					'GroupLink' => '?show={Itembox}&groupId='.$row->GroupId,
-					'ToCartUrl' => '?show=Cart&add='.$row->Id,
-					'DetailsUrl' => '?show=Itemdetails&id='.$row->Id.($row->HasSetItems ? '&h=400' : ''),
+					'GroupLink' => '?show={Itembox}&groupId=' . $row->GroupId,
+					'ToCartUrl' => '?show=Cart&add=' . $row->Id,
+					'DetailsUrl' => '?show=Itemdetails&id=' . $row->Id . ($row->HasSetItems ? '&h=400' : ''),
 					'Popularity' => $row->BuyCounter,
 					'Points' => $row->Points,
 					'Image' => Item::getImagePath($row->Image),
@@ -271,4 +259,3 @@ class Itembox extends aContentBox
 	}
 	#end
 }
-?>

@@ -1,6 +1,7 @@
 <?php
 
-class Caching{
+class Caching
+{
 	private $cache_file_hash;
 	private $cache_file_compressed;
 	private $cache_file_uncompressed;
@@ -11,10 +12,11 @@ class Caching{
 	private $dir;
 	private $files;
 
-	public function __construct($cacheFile, $contentType, $dir, $files){
-		$this->cache_file_hash = $cacheFile.'.md5';
-		$this->cache_file_compressed = $cacheFile.'.gz';
-		$this->cache_file_uncompressed = $cacheFile.'.plain';
+	public function __construct($cacheFile, $contentType, $dir, $files)
+	{
+		$this->cache_file_hash = $cacheFile . '.md5';
+		$this->cache_file_compressed = $cacheFile . '.gz';
+		$this->cache_file_uncompressed = $cacheFile . '.plain';
 
 		$this->dir = $dir;
 		$this->files = $files;
@@ -24,35 +26,37 @@ class Caching{
 		$this->cached_etag = @file_get_contents($this->cache_file_hash);
 	}
 
-	public function send(){
-		header('Content-Type: '.$this->contentType);
-		header("Expires: ".gmdate("D, d M Y H:i:s", time() + 3600*24)." GMT");
+	public function send()
+	{
+		header('Content-Type: ' . $this->contentType);
+		header("Expires: " . gmdate("D, d M Y H:i:s", time() + 3600 * 24) . " GMT");
 
-		if($this->validateEtag()){
+		if ($this->validateEtag()) {
 			header('HTTP/1.1 304 Not Modified');
-		}
-		else{
+		} else {
 			$this->updateFiles();
 			$this->sendFile();
 		}
 	}
 
-	private function validateEtag(){
+	private function validateEtag()
+	{
 		return isset($_SERVER['HTTP_IF_NONE_MATCH']) && $_SERVER['HTTP_IF_NONE_MATCH'] && $this->cached_etag == $_SERVER['HTTP_IF_NONE_MATCH'];
 	}
 
-	private function updateFiles(){
+	private function updateFiles()
+	{
 		$new_etag = '';
-		foreach($this->files as $file){
-			$new_etag .= md5_file($this->dir.$file);
+		foreach ($this->files as $file) {
+			$new_etag .= md5_file($this->dir . $file);
 		}
 		$new_etag = md5($new_etag);
 
-		if(!$new_etag || $this->cached_etag != $new_etag
+		if (!$new_etag || $this->cached_etag != $new_etag
 			|| !file_exists($this->cache_file_hash)
 			|| !file_exists($this->cache_file_compressed)
 			|| !file_exists($this->cache_file_uncompressed)
-			){
+		) {
 			$this->cached_etag = $new_etag;
 
 			$fpHash = fopen($this->cache_file_hash, 'w');
@@ -60,8 +64,8 @@ class Caching{
 			fclose($fpHash);
 
 			$fpUncompressed = fopen($this->cache_file_uncompressed, 'w');
-			foreach($this->files as $file){
-				fputs($fpUncompressed, file_get_contents($this->dir.$file));
+			foreach ($this->files as $file) {
+				fputs($fpUncompressed, file_get_contents($this->dir . $file));
 			}
 			fclose($fpUncompressed);
 
@@ -71,22 +75,20 @@ class Caching{
 		}
 	}
 
-	private function sendFile(){
-		header('Etag: '.$this->cached_etag);
+	private function sendFile()
+	{
+		header('Etag: ' . $this->cached_etag);
 
-		if($this->clientAcceptsCompressedData()){
+		if ($this->clientAcceptsCompressedData()) {
 			header("Content-Encoding: gzip");
 			echo @file_get_contents($this->cache_file_compressed);
-		}
-		else{
+		} else {
 			echo @file_get_contents($this->cache_file_uncompressed);
 		}
 	}
 
-	private function clientAcceptsCompressedData(){
+	private function clientAcceptsCompressedData()
+	{
 		return isset($_SERVER['HTTP_ACCEPT_ENCODING']) && strpos($_SERVER['HTTP_ACCEPT_ENCODING'], "gzip") !== false;
 	}
 }
-
-
-?>

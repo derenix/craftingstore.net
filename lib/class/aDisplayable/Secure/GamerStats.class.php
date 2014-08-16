@@ -7,4 +7,3 @@ class GamerStats extends aDisplayable
 	{
 	}
 }
-?>

@@ -1,24 +1,30 @@
 <?php
 defined('_LOGIN') or die("Security block!");
 
-$allowedSortColumns = array('Nickname','Email','MinecraftName','RegTime','Validated');
+$allowedSortColumns = array('Nickname', 'Email', 'MinecraftName', 'RegTime', 'Validated');
 
-$sort = ($_GET['sort'] == 'desc' ? 'desc' : 'asc');
+$sort = ((isset($_GET['sort'])) && ($_GET['sort'] == 'desc') ? 'desc' : 'asc');
 $sortReverse = ($sort == 'asc' ? 'desc' : 'asc');
 
-if(in_array($_GET['order'],$allowedSortColumns)){
-	$order = " ORDER BY ".$_GET['order'].' '.$sort;
+$order = "ORDER BY Id " . $sort;
+$orderBy = "Id";
+if (isset($_GET['order']) && in_array($_GET['order'], $allowedSortColumns)) {
+	$orderBy = $_GET['order'];
+	$order = " ORDER BY " . $orderBy . ' ' . $sort;
 }
 
 echo '<table>
 <tr>
-	<th><a href="?p='.$_GET['p'].'&sort='.($_GET['order'] == 'Nickname' ? $sortReverse : $sort).'&order=Nickname">Nickname</a></th>
-	<th><a href="?p='.$_GET['p'].'&sort='.($_GET['order'] == 'Email' ? $sortReverse : $sort).'&order=Email">Email</a></th>
-	<th><a href="?p='.$_GET['p'].'&sort='.($_GET['order'] == 'MinecraftName' ? $sortReverse : $sort).'&order=MinecraftName">MinecraftName</a></th>
-	<th><a href="?p='.$_GET['p'].'&sort='.($_GET['order'] == 'RegTime' ? $sortReverse : $sort).'&order=RegTime">RegTime</a></th>
-	<th><a href="?p='.$_GET['p'].'&sort='.($_GET['order'] == 'Validated' ? $sortReverse : $sort).'&order=Validated">Validated</a></th>
+	<th><a href="?p=' . $_GET['p'] . '&sort=' . ($orderBy == 'Nickname' ? $sortReverse : $sort) . '&order=Nickname">Nickname</a></th>
+	<th><a href="?p=' . $_GET['p'] . '&sort=' . ($orderBy === 'Email' ? $sortReverse : $sort) . '&order=Email">Email</a></th>
+	<th><a href="?p=' . $_GET['p'] . '&sort=' . ($orderBy == 'MinecraftName' ? $sortReverse : $sort) . '&order=MinecraftName">MinecraftName</a></th>
+	<th><a href="?p=' . $_GET['p'] . '&sort=' . ($orderBy == 'RegTime' ? $sortReverse : $sort) . '&order=RegTime">RegTime</a></th>
+	<th><a href="?p=' . $_GET['p'] . '&sort=' . ($orderBy == 'Validated' ? $sortReverse : $sort) . '&order=Validated">Validated</a></th>
 </tr>';
-foreach($db->iterate("SELECT Id,Nickname,Email,MinecraftName,RegTime,Validated FROM mc_gamer".$order) as $row){
+$query = "SELECT Id,Nickname,Email,MinecraftName,RegTime,Validated FROM mc_gamer " . $order;
+
+$result = $db->query($query, array());
+foreach ($result as $row) {
 	echo "
 <tr>
 	<td>{$row->Nickname}</td>
@@ -29,4 +35,3 @@ foreach($db->iterate("SELECT Id,Nickname,Email,MinecraftName,RegTime,Validated F
 </tr>";
 }
 echo '</table>';
-?>

@@ -119,11 +119,11 @@ if ($verified)
 	}
 
 	echo "Lock Tables\n";
-	$_SESSION['Index']->db->query("LOCK TABLE mc_orders WRITE");
+	MySqlDatabase::getInstance()->query("LOCK TABLE mc_orders WRITE");
 
 	echo "Check dublikated Entry in Database with TxnId ".$_POST['txn_id']."\n";
 	$TxnId = mysql_real_escape_string($_POST['txn_id']);
-	$r = $_SESSION['Index']->db->fetchOne("SELECT COUNT(*) FROM mc_orders WHERE TxnId='$TxnId'");
+	$r = MySqlDatabase::getInstance()->fetchOne("SELECT COUNT(*) FROM mc_orders WHERE TxnId='$TxnId'");
 
 	if ($r > 0){
 		echo "TxnId wurde bereits bearbeitet.\n";
@@ -148,9 +148,9 @@ if ($verified)
 
 		$sql = "INSERT INTO mc_orders (TxnId,UserId,PaypalTime,Amount) VALUES ('$TxnId', '$UserId', '$PaypalTime', '$Amount')";
 
-		$_SESSION['Index']->db->query($sql);
+		MySqlDatabase::getInstance()->query($sql);
 
-		$_SESSION['Index']->db->query("UNLOCK TABLES");
+		MySqlDatabase::getInstance()->query("UNLOCK TABLES");
 
 
 		// tell me about the successful buy

@@ -2,48 +2,57 @@
 defined('_LOGIN') or die("Security block!");
 
 #region Für Diese Woche noch extras berechen
-$w = date('w');#0 (für Sonntag) bis 6 (für Samstag)
-$dEnde=($w==0?0:7-$w);
-$dStart = $dStart-6;
+$w = date('w'); #0 (für Sonntag) bis 6 (für Samstag)
+$dEnde = ($w == 0 ? 0 : 7 - $w);
+$dStart = -6;
 #endregion
 
 #region Zeiträume
 $zeiten = array(
-'Heute' => array(
-		'start' => mktime(0,0,0),
-		'end' => mktime(24,0,0)),
+	'Heute' => array(
+		'start' => mktime(0, 0, 0),
+		'end' => mktime(24, 0, 0)),
 	'Gestern' => array(
-		'start' => mktime(-24,0,0),
-		'end' => mktime(0,0,0)),
+		'start' => mktime(-24, 0, 0),
+		'end' => mktime(0, 0, 0)),
 	'Diese Woche' => array(
-		'start' => mktime(0,0,0,date('n'),date('j')+$dStart),
-		'end' => mktime(24,0,0,date('n'),date('j')+$dEnde)),
+		'start' => mktime(0, 0, 0, date('n'), date('j') + $dStart),
+		'end' => mktime(24, 0, 0, date('n'), date('j') + $dEnde)),
 	'Dieser Monat' => array(
-		'start' => mktime(0,0,0,date('n'),1),
-		'end' => mktime(24,0,0,date('n'),date('t'))),
+		'start' => mktime(0, 0, 0, date('n'), 1),
+		'end' => mktime(24, 0, 0, date('n'), date('t'))),
 	'Gesamt' => array(
 		'start' => 0,
-		'end' => time()+1,
+		'end' => time() + 1,
 	));
 #endregion
 
 #region Funktionen zum Daten ermitteln
-function alsEuro($cents){
-	return str_replace('.',',',sprintf('%01.2f',$cents/100)).' €';
+function alsEuro($cents)
+{
+	return str_replace('.', ',', sprintf('%01.2f', $cents / 100)) . ' €';
 }
 
-function EigenerUmsatz($time,$db){
+function EigenerUmsatz($time, MySqlDatabase $db)
+{
 	return $db->fetchOne("SELECT Sum(Difference) FROM mc_ouraccount WHERE Time>='{$time['start']}' AND Time<'{$time['end']}'");
 }
-function EinzahlungenSpieler($time,$db){
+
+function EinzahlungenSpieler($time, MySqlDatabase $db)
+{
 	return $db->fetchOne("SELECT SUM(Revenue) FROM mc_gameraccounts WHERE Action='INPAYMENT' AND Time>='{$time['start']}' AND Time<'{$time['end']}'");
 }
-function AusgabenSpieler($time,$db){
+
+function AusgabenSpieler($time, MySqlDatabase $db)
+{
 	return $db->fetchOne("SELECT SUM(Revenue) FROM mc_gameraccounts WHERE Action='BOUGHT_ITEM' AND Time>='{$time['start']}' AND Time<'{$time['end']}'");
 }
-function AuszahlungenAnShopbetreiber($time,$db){
+
+function AuszahlungenAnShopbetreiber($time, MySqlDatabase $db)
+{
 	return $db->fetchOne("SELECT SUM(Difference) FROM mc_customeraccounts WHERE PayoutStatus>0 AND Time>='{$time['start']}' AND Time<'{$time['end']}'");
 }
+
 #end
 #region style+sciprt
 echo <<<html
@@ -121,79 +130,86 @@ html;
 #endregion
 
 #region Benutzer-Zeiten bearbeiten
-if(!isset($_SESSION['customTimes']))
+if (!isset($_SESSION['customTimes'])) {
 	$_SESSION['customTimes'] = array();
-if(isset($_GET['del']) && array_key_exists($_GET['del'],$_SESSION['customTimes']))
-{
+}
+
+if (isset($_GET['del']) && array_key_exists($_GET['del'], $_SESSION['customTimes'])) {
 	unset($_SESSION['customTimes'][$_GET['del']]);
 }
+
 $custom = array();
-if($_POST['customStart'] && $_POST['customEnd'])
-{
+$start = date("d.m.Y", time() - (3600*24));
+$end = date("d.m.Y");
+
+if (isset($_POST['customStart']) && isset($_POST['customEnd'])) {
 	$start = strtotime($_POST['customStart']);
 	$end = strtotime($_POST['customEnd']);
-	if($start > 0 && $end > $start)
-	{
+	if ($start > 0 && $end > $start) {
 		$_SESSION['customTimes'][] = array('start' => $start, 'end' => $end);
 	}
 }
+
 #endregion
 #region Übersicht
-foreach($zeiten as $value => $row){
-	echo '<th>'.$value.'</th>';
+foreach ($zeiten as $value => $row) {
+	echo '<th>' . $value . '</th>';
 }
-foreach($_SESSION['customTimes'] as $key => $value){
-	echo '<th><a href="?p='.$_GET['p'].'&amp;del='.$key.'"><img src="delete.png" title="Diesen Bereich löschen" style="border:0;" /></a>  '.date('d.m.Y', $value['start']).'<br />bis '.date('d.m.Y', $value['end']).'</th>';
+
+foreach ($_SESSION['customTimes'] as $key => $value) {
+	echo '<th><a href="?p=' . $_GET['p'] . '&amp;del=' . $key . '"><img src="delete.png" title="Diesen Bereich löschen" style="border:0;" /></a>  ' . date('d.m.Y', $value['start']) . '<br />bis ' . date('d.m.Y', $value['end']) . '</th>';
 }
+
 echo '
 <td>
-	<form action="?p='.$_GET['p'].'" method="post">
-		Von <input type="text" name="customStart" value="'.htmlspecialchars($customStart).'" onKeyPress="return submitenter(this,event)" style="width: 90px;" /><br />
-		Bis <input type="text" name="customEnd" value="'.htmlspecialchars($customEnd).'" onKeyPress="return submitenter(this,event)" style="width: 90px;" />
+	<form action="?p=' . $_GET['p'] . '" method="post">
+		Von <input type="text" name="customStart" value="' .$start.'" onKeyPress="return submitenter(this,event)" style="width: 90px;" /><br />
+		Bis <input type="text" name="customEnd" value="' . $end . '" onKeyPress="return submitenter(this,event)" style="width: 90px;" />
 		<input type="submit" style="display: none;" />
 	</form>
 </td>
 </tr>
 <tr>
 <td>Einzahlungen der Spieler</td>';
-foreach($zeiten as $row){
-	echo '<td>'.alsEuro(EinzahlungenSpieler($row,$db)).'</td>';
+foreach ($zeiten as $row) {
+	echo '<td>' . alsEuro(EinzahlungenSpieler($row, $db)) . '</td>';
 }
-foreach($_SESSION['customTimes'] as $row){
-	echo '<td>'.alsEuro(EinzahlungenSpieler($row,$db)).'</td>';
+
+foreach ($_SESSION['customTimes'] as $row) {
+	echo '<td>' . alsEuro(EinzahlungenSpieler($row, $db)) . '</td>';
 }
 echo '
 <td></td>
 </tr>
 <tr>
 <td>Ausgaben der Spieler</td>';
-foreach($zeiten as $row){
-	echo '<td>'.alsEuro(AusgabenSpieler($row,$db)).'</td>';
+foreach ($zeiten as $row) {
+	echo '<td>' . alsEuro(AusgabenSpieler($row, $db)) . '</td>';
 }
-foreach($_SESSION['customTimes'] as $row){
-	echo '<td>'.alsEuro(AusgabenSpieler($row,$db)).'</td>';
+foreach ($_SESSION['customTimes'] as $row) {
+	echo '<td>' . alsEuro(AusgabenSpieler($row, $db)) . '</td>';
 }
 echo '
 <td></td>
 </tr>
 <tr>
 <td>Auszahlungen an Shopbetreiber</td>';
-foreach($zeiten as $row){
-	echo '<td>'.alsEuro(AuszahlungenAnShopbetreiber($row,$db)).'</td>';
+foreach ($zeiten as $row) {
+	echo '<td>' . alsEuro(AuszahlungenAnShopbetreiber($row, $db)) . '</td>';
 }
-foreach($_SESSION['customTimes'] as $row){
-	echo '<td>'.alsEuro(AuszahlungenAnShopbetreiber($row,$db)).'</td>';
+foreach ($_SESSION['customTimes'] as $row) {
+	echo '<td>' . alsEuro(AuszahlungenAnShopbetreiber($row, $db)) . '</td>';
 }
 echo '
 <td></td>
 </tr>
 <tr>
 <td>Eigener Umsatz</td>';
-foreach($zeiten as $row){
-	echo '<td>'.alsEuro(EigenerUmsatz($row,$db)).'</td>';
+foreach ($zeiten as $row) {
+	echo '<td>' . alsEuro(EigenerUmsatz($row, $db)) . '</td>';
 }
-foreach($_SESSION['customTimes'] as $row){
-	echo '<td>'.alsEuro(EigenerUmsatz($row,$db)).'</td>';
+foreach ($_SESSION['customTimes'] as $row) {
+	echo '<td>' . alsEuro(EigenerUmsatz($row, $db)) . '</td>';
 }
 echo '
 <td></td>
@@ -203,7 +219,7 @@ echo '
 #end
 $sum = 0;
 $output = '';
-foreach($db->iterate("SELECT CustomersId, Difference, Time, 'ca' AS 'Table', c.MinecraftName AS 'Name' FROM mc_customeraccounts AS ca
+$result = $db->query("SELECT CustomersId, Difference, Time, 'ca' AS 'Table', c.MinecraftName AS 'Name' FROM mc_customeraccounts AS ca
 LEFT JOIN mc_customers AS c ON  c.Id=ca.CustomersId
 WHERE PayoutStatus>0
 
@@ -214,42 +230,32 @@ WHERE Action='1'
 UNION SELECT '0',Difference,Time,'oa',oa.PayoutMail FROM mc_ouraccount AS oa
 WHERE PayoutMail IS NOT NULL
 
-ORDER BY Time DESC") as $row)
-{
-	if($row->Table == 'ca')
-	{
-		$text = 'Auszahlung an '.$row->Name;
+ORDER BY Time DESC", array());
+foreach ($result as $row) {
+	if ($row->Table == 'ca') {
+		$text = 'Auszahlung an ' . $row->Name;
 		$row->Difference = -$row->Difference;
-	}
-	elseif($row->Table == 'ga')
-	{
-		if($row->Difference >= 0)
-		{
-			$text = 'Einzahlung von '.$row->Name;
+	} elseif ($row->Table == 'ga') {
+		if ($row->Difference >= 0) {
+			$text = 'Einzahlung von ' . $row->Name;
+		} else {
+			$text = 'Auszahlung an ' . $row->Name;
 		}
-		else
-		{
-			$text = 'Auszahlung an '.$row->Name;
-		}
-	}
-	elseif($row->Table == 'oa')
-	{
+	} elseif ($row->Table == 'oa') {
 		$row->Difference = -$row->Difference;
-		$text = 'Privatentnahme von '.$row->Name;
-	}
-	else
-	{
+		$text = 'Privatentnahme von ' . $row->Name;
+	} else {
 		$text = '';
 	}
 	$sum += $row->Difference;
 	$output .= '
 <tr>
-	<td>'.date('d.m.Y',strtotime($row->Time)).'</td>
-	<td>'.$text.'</td>
-	<td'.($row->Difference<0?' class="auszahlung"':'').'>'.alsEuro($row->Difference/POINTS_PER_EURO).'</td>
+	<td>' . date('d.m.Y', strtotime($row->Time)) . '</td>
+	<td>' . $text . '</td>
+	<td' . ($row->Difference < 0 ? ' class="auszahlung"' : '') . '>' . alsEuro($row->Difference / POINTS_PER_EURO) . '</td>
 </tr>';
 }
-echo '<p>Saldo zum '.date('d.m.Y H:i:s').': '.alsEuro($sum/POINTS_PER_EURO).'</p>';
+echo '<p>Saldo zum ' . date('d.m.Y H:i:s') . ': ' . alsEuro($sum / POINTS_PER_EURO) . '</p>';
 echo <<<html
 <table class="transactions">
 <tr>
@@ -259,4 +265,3 @@ echo <<<html
 </tr>{$output}
 </table>
 html;
-?>

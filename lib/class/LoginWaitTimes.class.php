@@ -3,18 +3,20 @@ defined('_MCSHOP') or die("Security block!");
 
 class LoginWaitTimes
 {
-	public static function getRemainingWaitTime($IsAdmin = false){
+	public static function getRemainingWaitTime($IsAdmin = false)
+	{
 		$DetermineWaitTime = new LoginWaitTimes($IsAdmin);
 		return $DetermineWaitTime->remainingWaitTime();
 	}
 
-	public static function getNextWaitTimeAfterLoginError($IsAdmin = false){
+	public static function getNextWaitTimeAfterLoginError($IsAdmin = false)
+	{
 		$DetermineWaitTime = new LoginWaitTimes($IsAdmin);
 
 		$DetermineWaitTime->incrementLoginErrorCount();
 
 		$remainingWaitTime = $DetermineWaitTime->remainingWaitTime();
-		if($remainingWaitTime == 0){
+		if ($remainingWaitTime == 0) {
 			$DetermineWaitTime->removeLoginError();
 		}
 
@@ -49,37 +51,42 @@ class LoginWaitTimes
 		*/
 	}
 
-	public static function setLoginValid($IsAdmin = false){
+	public static function setLoginValid($IsAdmin = false)
+	{
 		$DetermineWaitTime = new LoginWaitTimes($IsAdmin);
 		$DetermineWaitTime->removeLoginError();
 	}
 
-	private function removeLoginError(){
-		$_SESSION['Index']->db->query("DELETE FROM mc_loginerrors WHERE IP='{$_SERVER['REMOTE_ADDR']}' AND AdminUser='{$this->IsAdmin}'");
+	private function removeLoginError()
+	{
+		MySqlDatabase::getInstance()->query("DELETE FROM mc_loginerrors WHERE IP='{$_SERVER['REMOTE_ADDR']}' AND AdminUser='{$this->IsAdmin}'");
 	}
 
-	private function incrementLoginErrorCount(){
-		$_SESSION['Index']->db->query("INSERT INTO mc_loginerrors (IP,AdminUser) VALUES ('{$_SERVER['REMOTE_ADDR']}','{$this->IsAdmin}') ON DUPLICATE KEY UPDATE COUNT=COUNT+1");
+	private function incrementLoginErrorCount()
+	{
+		MySqlDatabase::getInstance()->query("INSERT INTO mc_loginerrors (IP,AdminUser) VALUES ('{$_SERVER['REMOTE_ADDR']}','{$this->IsAdmin}') ON DUPLICATE KEY UPDATE COUNT=COUNT+1");
 	}
 
-	private function remainingWaitTime(){
-		$login_error_information = $_SESSION['Index']->db->fetchOneRow("SELECT Count, Time FROM mc_loginerrors WHERE IP='{$_SERVER['REMOTE_ADDR']}' AND AdminUser='{$this->IsAdmin}' LIMIT 1");
-		if(!$login_error_information) //Keine Daten in der Datenbank vorhanden, also rauslöschen
+	private function remainingWaitTime()
+	{
+		$login_error_information = MySqlDatabase::getInstance()->fetchOneRow("SELECT Count, Time FROM mc_loginerrors WHERE IP='{$_SERVER['REMOTE_ADDR']}' AND AdminUser='{$this->IsAdmin}' LIMIT 1");
+		if (!$login_error_information) //Keine Daten in der Datenbank vorhanden, also rauslöschen
 			return 0;
 
 		return $this->getRemainingTime($login_error_information->Count, $login_error_information->Time);
 	}
-	private function getRemainingTime($tryNumber, $lastLoginTime){
-		if($tryNumber < count(LoginWaitTimes::$LOGIN_WAIT_TIMES)) //Wenn noch Loginversuche erlaubt sind
+
+	private function getRemainingTime($tryNumber, $lastLoginTime)
+	{
+		if ($tryNumber < count(LoginWaitTimes::$LOGIN_WAIT_TIMES)) //Wenn noch Loginversuche erlaubt sind
 		{
 			$wait_time = LoginWaitTimes::$LOGIN_WAIT_TIMES[$tryNumber - 1];
-		}
-		else //Das war wohl der letzte Versuch
+		} else //Das war wohl der letzte Versuch
 		{
 			$wait_time = LoginWaitTimes::$LOGIN_WAIT_TIMES[count(LoginWaitTimes::$LOGIN_WAIT_TIMES) - 1];
 		}
 		$remainingWaitTime = $wait_time + $lastLoginTime - time();
-		if($remainingWaitTime > 0)
+		if ($remainingWaitTime > 0)
 			return $remainingWaitTime;
 		return 0;
 	}
@@ -91,6 +98,7 @@ class LoginWaitTimes
 	private $IsAdmin = false;
 
 	private function __construct($IsAdmin = false)
-	{ if($this->IsAdmin) $IsAdmin = true; }
+	{
+		if ($this->IsAdmin) $IsAdmin = true;
+	}
 }
-?>

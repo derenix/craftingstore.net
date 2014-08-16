@@ -3,3 +3,4 @@ config/config.include.php
 template_c/
 *.gz
 *.md5
+.htaccess

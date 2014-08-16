@@ -4,12 +4,14 @@ defined('_MCSHOP') or die("Security block!");
 class LatestSales extends aDisplayable
 {
 	private $pagination;
+
 	function __construct()
 	{
 		$this->pagination = new Pagination();
 	}
 
-	public function prepareDisplay(){
+	public function prepareDisplay()
+	{
 		$_SESSION['Index']->assign_direct('NAVIGATION', true);
 		$_SESSION['Index']->assign_say('ADM_LATEST_TITLE');
 		$_SESSION['Index']->assign_say('ADM_LATEST_HEADER_PRODUCT');
@@ -19,9 +21,9 @@ class LatestSales extends aDisplayable
 		$_SESSION['Index']->assign_say('ADM_LATEST_HEADER_STATUS');
 		$_SESSION['Index']->assign_say('ADM_LATEST_HEADER_REVENUE');
 
-		$this->pagination->prepare($_SESSION['Index']->db->fetchOne("SELECT COUNT(*) FROM mc_gameraccounts AS ga INNER JOIN mc_inventory AS i ON ga.InventoryId=i.Id WHERE Action IS NOT NULL AND ga.ShopId='{$_SESSION['Index']->adminShop->getId()}'"), '?show=Statistics&c=LatestSales', $first, $number);
+		$this->pagination->prepare(MySqlDatabase::getInstance()->fetchOne("SELECT COUNT(*) FROM mc_gameraccounts AS ga INNER JOIN mc_inventory AS i ON ga.InventoryId=i.Id WHERE Action IS NOT NULL AND ga.ShopId='{$_SESSION['Index']->adminShop->getId()}'"), '?show=Statistics&c=LatestSales', $first, $number);
 
-		foreach($_SESSION['Index']->db->iterate("
+		foreach (MySqlDatabase::getInstance()->query("
 SELECT
 	g.Nickname,
 	p.Label AS Item,
@@ -45,9 +47,8 @@ ON i.ProductId=p.Id
 
 WHERE Action is not null AND ga.ShopId='{$_SESSION['Index']->adminShop->getId()}' AND p.ShopId='{$_SESSION['Index']->adminShop->getId()}'
 ORDER BY RowTime DESC, g.Nickname ASC, p.Label ASC
-LIMIT $first,$number") as $row)
-		{
-			switch($row->Action){
+LIMIT $first,$number") as $row) {
+			switch ($row->Action) {
 				case 'DEFAULT':
 					$info = $_SESSION['Index']->lang->say('ADM_LS_INFO_NEW_USER_LONG');
 					$status = $_SESSION['Index']->lang->say('ADM_LS_INFO_NEW_USER');
@@ -60,12 +61,11 @@ LIMIT $first,$number") as $row)
 					break;
 				case 'BOUGHT_ITEM':
 				case 'BOUGHT_ITEM_WITH_BONUS':
-					if(!$row->TransferTime){
+					if (!$row->TransferTime) {
 						$info = $_SESSION['Index']->lang->say('ADM_LS_INFO_BOUGHT_PRODUCT_LONG');
 						$status = $_SESSION['Index']->lang->say('ADM_LS_INFO_BOUGHT_PRODUCT');
 						$class = 'notice';
-					}
-					else{
+					} else {
 						$info = $_SESSION['Index']->lang->say('ADM_LS_INFO_PRODUCT_TRANSFERD_LONG');
 						$status = $_SESSION['Index']->lang->say('ADM_LS_INFO_PRODUCT_TRANSFERD');
 						$class = 'successful';
@@ -76,10 +76,9 @@ LIMIT $first,$number") as $row)
 					$status = '';
 					$class = '';
 			}
-			if(date('dmY') == date('dmY', $row->RowTime)){
-				$date = 'X Heute, '.date('H:i', $row->RowTime);
-			}
-			else{
+			if (date('dmY') == date('dmY', $row->RowTime)) {
+				$date = 'X Heute, ' . date('H:i', $row->RowTime);
+			} else {
 				$date = date('d.m.Y H:i', $row->RowTime);
 			}
 
@@ -91,13 +90,12 @@ LIMIT $first,$number") as $row)
 				'Status' => $status,
 				'Info' => $info,
 				'class' => $class,
-				'Difference' => CurrencyFormatted($row->Revenue/100).' '.CURRENCY_SHORT
+				'Difference' => CurrencyFormatted($row->Revenue / 100) . ' ' . CURRENCY_SHORT
 			);
 		}
-		if(!$list)
+		if (!$list)
 			$_SESSION['Index']->assign_say('ADM_LATEST_NO_LIST');
 		else
 			$_SESSION['Index']->assign('ADM_LATEST_LIST', $list);
 	}
 }
-?>

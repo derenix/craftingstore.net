@@ -6,12 +6,12 @@ RewriteBase /
 # changed for github!
 
 	#Subdomain ist nicht secure => umleiten nach minecraftshop.net
-RewriteCond  %{HTTP_HOST}  !^secure\.craftingstore\.net$ [NC]
-RewriteRule ^(.*)$ http://craftingstore.net [L,NC,QSA]
+RewriteCond  %{HTTP_HOST}  !^secure\.local.craftingstore\.net$ [NC]
+RewriteRule ^(.*)$ http://local.craftingstore.net [L,NC,QSA]
 
 	# Alle mit einer nicht angegebenen IP werden nach / umgeleitet
 RewriteCond %{REMOTE_ADDR} !(1.1.1.1|2.2.2.2) [NC]
-RewriteRule ^(.*)$ http://minecraftshop.net [L,R=302]
+RewriteRule ^(.*)$ http://local.craftingstore.net [L,R=302]
 
 	#Zugriff nur auf die angegebenen Dateien erlauben
 RewriteCond %{REQUEST_URI} !^/megaadmin/?$

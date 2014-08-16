@@ -1,5 +1,6 @@
 <?php
 defined('_MCSHOP') or die("Security block!");
+
 class ItemSearch extends aDisplayable
 {
 	public function prepareDisplay()
@@ -7,11 +8,9 @@ class ItemSearch extends aDisplayable
 		#region Gruppen auslesen
 		$gruppen = null;
 		$tree = $_SESSION['Index']->nstree->getSubTree(1);
-		if($tree)
-		{
-			foreach($tree as $row)
-			{
-				$gruppen[] = array('Id' => $row->Id, 'Label' => $row->Label, 'Level' => $row->Level+1);
+		if ($tree) {
+			foreach ($tree as $row) {
+				$gruppen[] = array('Id' => $row->Id, 'Label' => $row->Label, 'Level' => $row->Level + 1);
 			}
 		}
 		$_SESSION['Index']->assign('ITEMSEARCH_GROUPLIST', $gruppen);
@@ -24,4 +23,3 @@ class ItemSearch extends aDisplayable
 		$_SESSION['Index']->assign_say('ITEMSEARCH_FIND');
 	}
 }
-?>

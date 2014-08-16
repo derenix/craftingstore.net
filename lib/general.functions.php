@@ -4,14 +4,10 @@
 function replace_arr_val($search, $replacement, $subject)
 {
 	$return = array();
-	foreach($subject as $key => $value)
-	{
-		if(is_array($value))
-		{
+	foreach ($subject as $key => $value) {
+		if (is_array($value)) {
 			$return[$key] = replace_arr_val($search, $replacement, $value);
-		}
-		else
-		{
+		} else {
 			$return[$key] = str_replace($search, $replacement, $value);
 		}
 	}
@@ -20,47 +16,40 @@ function replace_arr_val($search, $replacement, $subject)
 
 function replace_val($search, $replacement, $subject)
 {
-	if(is_array($subject))
-	{
+	if (is_array($subject)) {
 		return replace_arr_val($search, $replacement, $subject);
-	}
-	else
-	{
+	} else {
 		return str_replace($search, $replacement, $subject);
 	}
 }
+
 #end
 #region find
 function find_arr_val($search, $subject, &$out, $hierachical = true, $limit = 0)
 {
-	if(!isset($out)) $out = array();
+	if (!isset($out)) $out = array();
 
 	$return = 0;
-	foreach($subject as $key => $value)
-	{
-		if($limit > 0 && $return >= $limit) continue;
-		if(is_array($value))
-		{
-			if($hierachical)
-			{
+	foreach ($subject as $key => $value) {
+		if ($limit > 0 && $return >= $limit) continue;
+		if (is_array($value)) {
+			if ($hierachical) {
 				$return += find_arr_val($search, $value, $_out, $hierachical, $limit);
 				$out[$key] = $_out;
-			}
-			else $return += find_arr_val($search, $value, $out, $hierachical, $limit);
-		}
-		else
-		{
+			} else $return += find_arr_val($search, $value, $out, $hierachical, $limit);
+		} else {
 			$return += preg_match_all($search, $value, $_out);
-			if($hierachical) $out[$key] = $_out;
+			if ($hierachical) $out[$key] = $_out;
 			else $out[] = $_out;
 		}
 	}
 	return $return;
 }
+
 function find_val($search, $subject, &$out, $hierachical = true, $limit = 0)
 {
 	$out = array();
-	if(is_array($subject))
+	if (is_array($subject))
 		//Wenn $out ein Array ist, werden alle gefundenen Ergebnisse in derselben Hierachie zurückgegeben, wie sie gefunden wurden
 		return find_arr_val($search, $subject, $out, $hierachical, $limit);
 	else return preg_match_all($search, $subject, $out);
@@ -73,30 +62,28 @@ function find_val($search, $subject, &$out, $hierachical = true, $limit = 0)
 function CurrencyFormatted($value)
 {
 	$formatted = sprintf("%01.2f", $value);
-	if(substr($formatted,strlen($formatted)-2) === "00")
-	{
-		$formatted = substr($formatted,0,strlen($formatted)-3);
-	}
-	elseif($_SESSION['Index']->say('COMMA') != '.')
-	{
-		$formatted = str_replace('.',$_SESSION['Index']->say('COMMA'),$formatted);
+	if (substr($formatted, strlen($formatted) - 2) === "00") {
+		$formatted = substr($formatted, 0, strlen($formatted) - 3);
+	} elseif ($_SESSION['Index']->say('COMMA') != '.') {
+		$formatted = str_replace('.', $_SESSION['Index']->say('COMMA'), $formatted);
 	}
 	return $formatted;
 }
+
 #end
 
 #region function array_map_recursive($function, $array)
 function array_map_recursive($fn, $ar)
 {
 	$ra = array();
-	foreach($ar as $k => $v)
-	{
+	foreach ($ar as $k => $v) {
 		$ra[$k] = is_array($v)
-		? array_map_recursive($fn, $v)
-		: $fn($v);
+			? array_map_recursive($fn, $v)
+			: $fn($v);
 	}
 	return $ra;
 }
+
 #end
 
 #region function setLocation($params = null, $host = null, $forceHttps = false)
@@ -105,21 +92,23 @@ function setLocation($params = null, $host = null, $useHttps = null)
 {
 	$protocol = "http";
 
-	if($useHttps === true || ($useHttps === null && $_SERVER['HTTPS'])){
+	if ($useHttps === true || ($useHttps === null && $_SERVER['HTTPS'])) {
 		$protocol = "https";
 	}
 
-	if($params === null) $params = $_SERVER['REQUEST_URI'];
-	if($host === null) $host = $_SERVER['HTTP_HOST'];
+	if ($params === null) $params = $_SERVER['REQUEST_URI'];
+	if ($host === null) $host = $_SERVER['HTTP_HOST'];
 
-	if($params[0] != null#mindestens 1 Zeichen lang
-		&& ($params[0] == '\\' || $params[0] == '/'))#erstes Zeichen / oder \
+	if ($params[0] != null #mindestens 1 Zeichen lang
+		&& ($params[0] == '\\' || $params[0] == '/')
+	) #erstes Zeichen / oder \
 	{
-		$params = substr($params,1);#erstes Zeichen entfernen
+		$params = substr($params, 1); #erstes Zeichen entfernen
 	}
-	header('Location: '.$protocol.'://'.$host.'/'.$params);
+	header('Location: ' . $protocol . '://' . $host . '/' . $params);
 	die();
 }
+
 #end
 
 #region isNumber($value, $acceptzero = false)
@@ -129,29 +118,25 @@ function setLocation($params = null, $host = null, $useHttps = null)
 */
 function isNumber($value, $acceptzero = false, $acceptNegative = false)
 {
-	if($acceptzero)
-	{
-		if($acceptNegative){
+	if ($acceptzero) {
+		if ($acceptNegative) {
 			//nur Ziffern eingegeben, ggf. mit vorgestelltem Minus
 			return preg_match('/^-?\d+$/', $value);
-		}
-		else{
+		} else {
 			//nur Ziffern eingegeben
 			return preg_match('/^\d+$/', $value);
 		}
-	}
-	else
-	{
-		if($acceptNegative){
+	} else {
+		if ($acceptNegative) {
 			//nur Ziffern, wobei die Zahl nicht nur aus nullen bestehen darf, ggf. mit vorgestelltem Minus
 			return preg_match('/^-?([0]*)([1-9]{1}\d*)$/', $value);
-		}
-		else{
+		} else {
 			//nur Ziffern, wobei die Zahl nicht nur aus nullen bestehen darf
 			return preg_match('/^([0]*)([1-9]{1}\d*)$/', $value);
 		}
 	}
 }
+
 #end
 
 #region setError($message, $file, $line)
@@ -160,17 +145,23 @@ function isNumber($value, $acceptzero = false, $acceptNegative = false)
 */
 function setError($message, $file, $line = null)
 {
-	error_log("Error while creating new shop: (".$file.($line ? " in line ".$line : "")."): ".$message);
+	error_log("Error while creating new shop: (" . $file . ($line ? " in line " . $line : "") . "): " . $message);
 }
+
 #end
 
 #region function getCurrentSubdomain()
 function getCurrentSubdomain($fqdn = null)
 {
-	if($fqdn === null) $fqdn = $_SERVER['HTTP_HOST'];
-	preg_match('/(.*)(?=\.'.str_replace('.','\\.',BASE_DOMAIN).')/i', $fqdn, $matches);
+	if ($fqdn === null) {
+		$fqdn = $_SERVER['HTTP_HOST'];
+	}
+
+	preg_match('/(.*)(?=\.' . str_replace('.', '\\.', BASE_DOMAIN) . ')/i', $fqdn, $matches);
+
 	return $matches[0];
 }
+
 #end
 
 #region function random_string_by_length($length)
@@ -180,12 +171,12 @@ function random_string_by_length($length)
 	$chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 	$count = strlen($chars) - 1;
 	$rand = '';
-	for($i=0; $i<$length; $i++)
-	{
+	for ($i = 0; $i < $length; $i++) {
 		$rand .= $chars[rand(0, $count)];
 	}
 	return $rand;
 }
+
 #end
 
 #region function random_number_by_length($length)
@@ -193,12 +184,12 @@ function random_string_by_length($length)
 function random_number_by_length($length)
 {
 	$rand = '';
-	for($i=0; $i<$length; $i++)
-	{
+	for ($i = 0; $i < $length; $i++) {
 		$rand .= rand(0, 9);
 	}
 	return $rand;
 }
+
 #end
 
 #region passwort-Krams
@@ -208,96 +199,124 @@ function random_number_by_length($length)
 # incrementieren der Runden um 1 verdoppelt die Ausführungsdauer
 function bcrypt_encode($email, $password, $rounds = "10")
 {
-	$string = hash_hmac("whirlpool", str_pad($password, strlen($password)*4, sha1($email), STR_PAD_BOTH), SALT, true);
+	$string = hash_hmac("whirlpool", str_pad($password, strlen($password) * 4, sha1($email), STR_PAD_BOTH), SALT, true);
 	$salt = substr(str_shuffle('./0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'), 0, 22);
-	return crypt($string, '$2a$'.$rounds.'$'.$salt);
+	return crypt($string, '$2a$' . $rounds . '$' . $salt);
 }
+
 #end
 
 #region public static function bcrypt_check($email, $password, $stored)
 # Überprüft, ob die E-Mail-Adresse und das Password denselben Hashwert ergeben, wie der übergebene
 function bcrypt_check($email, $password, $stored)
 {
-	if(!$email || !$password || !$stored) return false;
-	$string = hash_hmac("whirlpool", str_pad($password, strlen($password)*4, sha1($email), STR_PAD_BOTH), SALT, true);
+	if (!$email || !$password || !$stored) return false;
+	$string = hash_hmac("whirlpool", str_pad($password, strlen($password) * 4, sha1($email), STR_PAD_BOTH), SALT, true);
 	return crypt($string, substr($stored, 0, 30)) == $stored;
 }
+
 #end
 #end
 
 #region Datenbank
 #region startTransaction
-function startTransaction($lock = null, $db = null){
-	if($db == null) $db = $_SESSION['Index']->db;
-	$db->query('SET autocommit=0');
-	if($lock !== null)
-		$db->query('LOCK TABLES '.$lock);
+function startTransaction($lock = null)
+{
+	MySqlDatabase::getInstance()->query('SET autocommit=0');
+	if ($lock !== null) {
+		MySqlDatabase::getInstance()->query('LOCK TABLES ' . $lock);
+	}
 }
+
 #end
 #region commit
-function commit($db = null){
-	if($db == null) $db = $_SESSION['Index']->db;
-	$db->query('COMMIT');
-	$db->query('UNLOCK TABLES');
-	$db->query('SET autocommit=1');
+function commit()
+{
+	MySqlDatabase::getInstance()->query('COMMIT');
+	MySqlDatabase::getInstance()->query('UNLOCK TABLES');
+	MySqlDatabase::getInstance()->query('SET autocommit=1');
 }
+
 #end
 #region rollback
-function rollback($db = null){
-	if($db == null) $db = $_SESSION['Index']->db;
-	$return = mysql_error();
-	$db->query('ROLLBACK');
-	$db->query('UNLOCK TABLES');
-	$db->query("SET autocommit=1");
-	return $return;
+function rollback()
+{
+	MySqlDatabase::getInstance()->query('ROLLBACK');
+	MySqlDatabase::getInstance()->query('UNLOCK TABLES');
+	MySqlDatabase::getInstance()->query("SET autocommit=1");
 }
+
 #end
 #end
 
 #region isValidIp($ip)
-function isValidIp($ip){
+function isValidIp($ip)
+{
 	return false !== @inet_pton($ip);
 }
+
 #end
 #region isValidHostname($hostname)
-function isValidHostname($hostname){
-	return preg_match("/^(([a-z0-9]|[a-z0-9][a-zA-Z0-9\-]*[a-z0-9])\.)+([a-z0-9]|[a-z0-9][a-zA-Z0-9\-]*[a-z0-9])+$/i",$hostname) == 1;
+function isValidHostname($hostname)
+{
+	return preg_match("/^(([a-z0-9]|[a-z0-9][a-zA-Z0-9\-]*[a-z0-9])\.)+([a-z0-9]|[a-z0-9][a-zA-Z0-9\-]*[a-z0-9])+$/i", $hostname) == 1;
 }
-function isInvalidHostnameOrIp($string){
+
+function isInvalidHostnameOrIp($string)
+{
 	if (isValidIp($string) || isValidHostname($string)) return false;
 	return true;
 }
 
-function doSleep($startTime, $minTime){
-	$rest = $minTime - microtime(1)+$startTime;
-	if($rest > 0)
-		usleep($rest*1000000);
+function doSleep($startTime, $minTime)
+{
+	$rest = $minTime - microtime(1) + $startTime;
+	if ($rest > 0)
+		usleep($rest * 1000000);
 }
+
 #end
 #region SecondsToTimeString
-function secondsToTimeString($s){
-	if($s >= 3600){
-		$time = floor($s/3600);
-		if($time == 1)
-			$time .= ' '.$_SESSION['Index']->say('TIME_HOUR');
+function secondsToTimeString($s)
+{
+	if ($s >= 3600) {
+		$time = floor($s / 3600);
+		if ($time == 1)
+			$time .= ' ' . $_SESSION['Index']->say('TIME_HOUR');
 		else
-			$time .= ' '.$_SESSION['Index']->say('TIME_HOURS');
-	}
-	elseif($s >= 60){
-		$time = floor($s/60);
-		if($time == 1)
-			$time .= ' '.$_SESSION['Index']->say('TIME_MINUTE');
+			$time .= ' ' . $_SESSION['Index']->say('TIME_HOURS');
+	} elseif ($s >= 60) {
+		$time = floor($s / 60);
+		if ($time == 1)
+			$time .= ' ' . $_SESSION['Index']->say('TIME_MINUTE');
 		else
-			$time .= ' '.$_SESSION['Index']->say('TIME_MINUTES');
-	}
-	else{
+			$time .= ' ' . $_SESSION['Index']->say('TIME_MINUTES');
+	} else {
 		$time = $s;
-		if($time == 1)
-			$time .= ' '.$_SESSION['Index']->say('TIME_SECOND');
+		if ($time == 1)
+			$time .= ' ' . $_SESSION['Index']->say('TIME_SECOND');
 		else
-			$time .= ' '.$_SESSION['Index']->say('TIME_SECONDS');
+			$time .= ' ' . $_SESSION['Index']->say('TIME_SECONDS');
 	}
 	return $time;
 }
+
 #end
-?>
+
+function vd( /* args */)
+{
+	foreach (func_get_args() as $arg) {
+		echo "<pre>";
+		var_dump($arg);
+		echo "</pre>";
+	}
+}
+
+function vdd( /* args */)
+{
+	foreach (func_get_args() as $arg) {
+		vd($arg);
+	}
+
+	die();
+}

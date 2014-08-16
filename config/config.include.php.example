@@ -11,6 +11,7 @@
 defined('_MCSHOP') or die("Security block!");
 define('VERSION', "0.7.5"); //release.state.build
 
+date_default_timezone_set("Europe/Berlin");
 
 define('SESSION_TIMEOUT', 3600);
 define('SESSION_ID_TIMEOUT', 1800);
@@ -78,5 +79,3 @@ define('CAPTCHA_PRIVATE_KEY','XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX');
 define('BUG_REPORT_TARGET','http://bugs.craftingstore.net');
 
 define('SERVER_MAX_TRANSFER_FAILURES',4);
-
-?>

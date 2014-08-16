@@ -1,9 +1,9 @@
 <?php
 /**
  * MySQL Result Set
- * 
+ *
  * Class definition for the {@link MySqlResultSet} object.
- * 
+ *
  * @packagemysql-database
  */
 
@@ -11,23 +11,23 @@
  * MySQL Result Set
  *
  * An iteratable object representing the result set from a MySQL SELECT query.
- * The Iterator interface allows the object to be iterated over by PHP in a 
+ * The Iterator interface allows the object to be iterated over by PHP in a
  * foreach loop as objects or arrays representing each row of data.
- * 
+ *
  * For most applications you will not need to call any of this object's methods
  * directly. Instead, it is typically obtained from {@link MySqlDatabase::iterate()}
  * and iterated over using a foreach loop:
- * 
+ *
  * <code>
  * $db = MySqlDatabase::getInstance();
  * $db->connect('localhost', 'user', 'password', 'database_name');
- * 
+ *
  * // $db->iterate() returns a new MySqlResultSet instance
  *   foreach ($db->iterate("SELECT * FROM users LIMIT 100") as $row) {
  *   print_r($row);
  * }
  * </code>
- * 
+ *
  * @packagemysql-database
  * @author Micah Carrick
  * @copyright(c) 2010 - Micah Carrick
@@ -35,189 +35,163 @@
  * @licenseBSD
  */
 defined('_MCSHOP') or die("Security block!");
-class MySqlResultSet implements Iterator
+
+class MySqlResultSet
 {
 	private $query;
+
+	/**
+	 * @var PDOStatement
+	 */
 	private $result;
-	private $index = 0;
 	private $num_rows = 0;
 	private $row = false;
 	private $type;
 
 	/**
-	*Object Data
-	*
-	*The data will be fetched as an object, where the columns of the table
-	*are property naems of the object. See 
-	*{@link mysql_fetch_object()}.
-	*/
-	const DATA_OBJECT = 1;
-	
-	/**
-	*Numeric Array Data
-	*
-	*The data will be fetched as a numerically indexed array. See
-	*{@link mysql_fetch_row()}.
-	*/
-	const DATA_NUMERIC_ARRAY = 2;
-	
-	/**
-	*Keyed Array Data
-	*
-	*The data will be fetched as an associative array. See
-	*{@link mysql_fetch_assoc()}.
-	*/
-	const DATA_ASSOCIATIVE_ARRAY = 3;
-	
-	/**
-	*Array Data
-	*
-	*The data will be fetched as both an associative and indexed array. See
-	*{@link mysql_fetch_array()}.
-	*/
-	const DATA_ARRAY = 4;
-	
-	/**
-	*Constructor
-	*
-	*The constructor requires an SQL query which should be a query that 
-	*returns a MySQL result resource such as a SELECT query. If the query
-	*fails or does not return a result resource, the constructor will throw
-	*an exception.
-	*
-	*The optional $data_type parameter specifies how to fetch the data. One 
-	*of the data constants can be specified or the default 
-	*{@link MySqlResultSet::DATA_OBJECT} will be used.
-	*
-	*@paramstring
-	*@paraminteger
-	*/
-	public function __construct($query, $data_type=MySqlResultSet::DATA_OBJECT, $link=false) 
-	{
-		if ($link) $this->result = @mysql_query($query, $link);
-		else $this->result = @mysql_query($query);
+	 * @var PDO
+	 */
+	private $database;
 
-		if (!$this->result) {
-				throw new Exception(mysql_error());
+	/**
+	 *Object Data
+	 *
+	 *The data will be fetched as an object, where the columns of the table
+	 *are property naems of the object. See
+	 *{@link mysqli_fetch_object()}.
+	 */
+	const DATA_OBJECT = 1;
+
+	/**
+	 *Numeric Array Data
+	 *
+	 *The data will be fetched as a numerically indexed array. See
+	 *{@link mysqli_fetch_row()}.
+	 */
+	const DATA_NUMERIC_ARRAY = 2;
+
+	/**
+	 *Keyed Array Data
+	 *
+	 *The data will be fetched as an associative array. See
+	 *{@link mysqli_fetch_assoc()}.
+	 */
+	const DATA_ASSOCIATIVE_ARRAY = 3;
+
+	/**
+	 *Array Data
+	 *
+	 *The data will be fetched as both an associative and indexed array. See
+	 *{@link mysqli_fetch_array()}.
+	 */
+	const DATA_ARRAY = 4;
+	const DATA_FETCH_ONE = 5;
+	/**
+	 *Constructor
+	 *
+	 *The constructor requires an SQL query which should be a query that
+	 *returns a MySQL result resource such as a SELECT query. If the query
+	 *fails or does not return a result resource, the constructor will throw
+	 *an exception.
+	 *
+	 *The optional $data_type parameter specifies how to fetch the data. One
+	 *of the data constants can be specified or the default
+	 *{@link MySqlResultSet::DATA_OBJECT} will be used.
+	 *
+	 * @param \PDO $database
+	 * @param $query
+	 * @param array $parameters
+	 * @param int $data_type
+	 * @throws Exception
+	 * @internal param array $paramters
+	 * @internal param \MySQLi $link
+	 * @internal param $string
+	 */
+	public function __construct(PDO $database, $query, array $parameters = array(), $data_type = MySqlResultSet::DATA_OBJECT)
+	{
+		$this->database = $database;
+
+		$this->result = $this->query($query, $parameters, $data_type);
+
+		if ($this->database->errorCode() !== "00000") {
+			throw new Exception("" . $this->database->errorInfo());
 		}
-		
-		if (!is_resource($this->result) 
-				|| get_resource_type($this->result) != 'mysql result') {
-				throw new Exception("Query does not return an mysql result resource.");
-		}
-		
+
 		$this->query = $query;
-		$this->num_rows = mysql_num_rows($this->result);
+		$this->num_rows = count($this->result);
 		$this->type = $data_type;
 	}
-	
+
+	private function query($query, array $parameters, $dataType)
+	{
+		//vd($query, $parameters);
+
+		$query = $this->database->prepare($query);
+
+		foreach ($parameters as $parameter => $value) {
+			$query->bindValue($parameter, $value);
+		}
+
+		$query->execute();
+
+		switch($dataType) {
+			case self::DATA_ARRAY:
+			case self::DATA_NUMERIC_ARRAY:
+			case self::DATA_ASSOCIATIVE_ARRAY:
+				return $query->fetchAll(PDO::FETCH_ASSOC);
+				break;
+			break;
+			case self::DATA_OBJECT:
+				return $query->fetchAll(PDO::FETCH_OBJ);
+				break;
+			case self::DATA_FETCH_ONE:
+				return $query->fetch(PDO::FETCH_COLUMN);
+				break;
+			default:
+				return $query->fetchAll(PDO::FETCH_OBJ);
+		}
+	}
+
 	/**
-	*Destructor
-	*
-	*The destructor will free the MySQL result resource if it is valid.
-	*/
+	 *Destructor
+	 *
+	 *The destructor will free the MySQL result resource if it is valid.
+	 */
 	public function __destruct()
 	{
-		if (is_resource($this->result) 
-				&& get_resource_type($this->result) == 'mysql result') {
-				mysql_free_result($this->result); 
-		}
+		unset($this->database);
 	}
-	
-	private function fetch()
-	{
-		if ($this->num_rows > 0) {
-				switch ($this->type) {
-					case MySqlResultSet::DATA_NUMERIC_ARRAY: 
-						$func = 'mysql_fetch_row';
-						break;
-					case MySqlResultSet::DATA_ASSOCIATIVE_ARRAY: 
-						$func = 'mysql_fetch_assoc';
-						break;
-					case MySqlResultSet::DATA_ARRAY: 
-						$func = 'mysql_fetch_array';
-					default: 
-						$func = 'mysql_fetch_object';
-						break;
-				}
-				
-				$this->row = $func($this->result);
-				$this->index++;
-		}
-	}
-	
+
+	/**
+	 * @return array
+	 */
 	public function getResultResource()
 	{
 		return $this->result;
 	}
-	
+
+	/**
+	 * @return bool
+	 */
 	public function isEmpty()
 	{
-		if ($this->num_rows == 0) return true;
-		else return false;
-	}
-	
-	/**
-	*Rewind
-	*
-	*Rewind the Iterator to the first row of data.
-	*/
-	public function rewind() 
-	{
-		if ($this->num_rows > 0) {
-				mysql_data_seek($this->result, 0);
-				$this->index = -1;// fetch() will increment to 0
-				$this->fetch();
+		if ($this->num_rows == 0) {
+			return true;
 		}
+
+		return false;
 	}
-	
+
 	/**
-	*Current Row
-	*
-	*Get the current row of data. The type of data is determined by the $type
-	*parameter passed to the constructor.
-	*
-	*@return mixed
-	*/
-	function current() 
-	{
-		return $this->row;
-	}
-	
-	/**
-	*Key
-	*
-	*Get the index for the current row. The index begins at 0 with the first
-	*row of data.
-	*
-	*@return integer
-	*/
-	function key() 
-	{
-		return $this->index;
-	}
-	
-	/**
-	*Next
-	*
-	*Move forward to the next row in the result set.
-	*/
-	function next() 
-	{
-		$this->fetch();
-	}
-	
-	/**
-	*Valid
-	*
-	*Determines if the current row is valid.
-	*
-	*@return boolean
-	*/
-	function valid() 
+	 *Valid
+	 *
+	 *Determines if the current row is valid.
+	 *
+	 * @return boolean
+	 */
+	function valid()
 	{
 		if ($this->row === false) return false;
 		else return true;
 	}
 }
-?>

@@ -7,31 +7,33 @@ class PendingTransfers extends aDisplayable
 	private $lastPlayerOnlineStatus = false;
 	private $lastServerOnlineStatus = 0;
 
-	public function __construct(){
+	public function __construct()
+	{
 		$this->lastServerOnlineStatus = $_SESSION['Index']->shop->getShopInfo()->ServerOnline;
 		//$this->lastPlayerOnlineStatus = $_SESSION['Index']->user->getPlayerOnlineStatus();
 	}
 
-	private function doRefresh(){
+	private function doRefresh()
+	{
 		$this->lastServerOnlineStatus = $_SESSION['Index']->shop->getShopInfo("ServerOnline");
 	}
-	public static function transferProduct($transferId){
-		if(!$_SESSION['Index']->user->isLoggedIn())
+
+	public static function transferProduct($transferId)
+	{
+		if (!$_SESSION['Index']->user->isLoggedIn())
 			return 'NO_USER';
 
-		if(!$_SESSION['Index']->shop->getShopInfo("ServerOnline")){
+		if (!$_SESSION['Index']->shop->getShopInfo("ServerOnline")) {
 			$_SESSION['Index']->assign_say('PENDING_TRANSFER_INFO', 'PENDING_ITEM_TRANSFER_ERROR');
 			return 'SERVER_OFFLINE';
 		}
 
 		$result = $_SESSION['Index']->shop->transfer($_SESSION['Index']->user->getLoginId(), $transferId);
-		if($result == 'TRANSFERED'){
+		if ($result == 'TRANSFERED') {
 			$_SESSION['Index']->assign_say('PENDING_TRANSFER_INFO', 'PENDING_ITEM_TRANSFERED');
-		}
-		elseif($result == 'ITEM_DISABLED'){
+		} elseif ($result == 'ITEM_DISABLED') {
 			$_SESSION['Index']->assign_say('PENDING_TRANSFER_INFO', 'PENDING_ITEM_DISABLED');
-		}
-		else{
+		} else {
 			$_SESSION['Index']->assign_say('PENDING_TRANSFER_INFO', 'PENDING_ITEM_TRANSFER_ERROR');
 		}
 		return $result;
@@ -40,17 +42,17 @@ class PendingTransfers extends aDisplayable
 	#region public function prepareDisplay()
 	public function prepareDisplay()
 	{
-		if(!$_SESSION['Index']->user->isLoggedIn())
+		if (!$_SESSION['Index']->user->isLoggedIn())
 			return;
 
 		#region doFullRefresh()
-		if($_GET['fullRefresh'] || $_GET['doTransfer']){
+		if ($_GET['fullRefresh'] || $_GET['doTransfer']) {
 			$this->doRefresh();
 		}
 		#end
 
 		#region transferProduct($ProductId)
-		if($_GET['doTransfer']){
+		if ($_GET['doTransfer']) {
 			PendingTransfers::transferProduct($_GET['doTransfer']);
 		}
 		#end
@@ -58,7 +60,7 @@ class PendingTransfers extends aDisplayable
 		#region gedöns anzeigen
 		$_SESSION['Index']->assign_say('PENDING_TITLE');
 		$pendingItems = array();
-		foreach($_SESSION['Index']->db->iterate("
+		foreach (MySqlDatabase::getInstance()->query("
 SELECT i.Id, p.Label, p.Image, i.Amount
 FROM mc_inventory AS i
 
@@ -67,16 +69,16 @@ ON p.Id=i.ProductId AND p.ShopId='{$_SESSION['Index']->shop->getId()}'
 
 WHERE i.ShopId='{$_SESSION['Index']->shop->getId()}' AND i.GamerId='{$_SESSION['Index']->user->getLoginId()}'
 AND i.TransferTime is NULL AND Locked=0
-ORDER BY i.Id DESC") as $row){
+ORDER BY i.Id DESC") as $row) {
 			$pendingItems[] = array(
-					'Id' => $row->Id,
-					'Label' => $row->Label,
-					'Amount' => $row->Amount,
-					'Image' => Item::getImagePath($row->Image, true),
-					'TransferInfo' => ($this->lastServerOnlineStatus ? 0 : 1)
-				);
+				'Id' => $row->Id,
+				'Label' => $row->Label,
+				'Amount' => $row->Amount,
+				'Image' => Item::getImagePath($row->Image, true),
+				'TransferInfo' => ($this->lastServerOnlineStatus ? 0 : 1)
+			);
 		}
-		/*foreach($_SESSION['Index']->db->iterate("
+		/*foreach(MySqlDatabase::getInstance()->query("
 SELECT t.Id, i.Label, i.Image, t.CallNumber,
 (
 	SELECT NeedsPlayerOnline FROM mc_transferCommands as c
@@ -100,10 +102,9 @@ ORDER BY t.Id DESC") as $row){
 				);
 		}*/
 
-		if(count($pendingItems) == 0){
+		if (count($pendingItems) == 0) {
 			$_SESSION['Index']->assign_say('PENDING_NO_ITEMS');
-		}
-		else{
+		} else {
 			$_SESSION['Index']->assign_say('PENDING_DO_TRANSFER');
 			$_SESSION['Index']->assign_say('PENDING_NEEDS_PLAYER_ONLINE');
 			$_SESSION['Index']->assign_say('PENDING_NEEDS_SERVER_ONLINE');
@@ -113,10 +114,8 @@ ORDER BY t.Id DESC") as $row){
 		$_SESSION['Index']->assign_say('PENDING_REFRESH');
 		$_SESSION['Index']->assign('PENDING_REFRESH_URL', '?show=PendingTransfers&fullRefresh=1');
 		$_SESSION['Index']->assign_say('TRANSFER_HISTORY_TITLE');
-		$_SESSION['Index']->assign('TRANSFER_HISTORY_URL','?show={TransferHistory}');
+		$_SESSION['Index']->assign('TRANSFER_HISTORY_URL', '?show={TransferHistory}');
 		#end
 	}
 	#end
 }
-
-?>

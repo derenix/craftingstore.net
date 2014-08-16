@@ -176,7 +176,7 @@ echo 'save_path: '.ini_get('session.save_path').'<br>';
 */
 
 #region Gesperrte Domains
-$_SESSION['ALLOWED_SUBDOMAINS'] = array('secure');
+$_SESSION['ALLOWED_SUBDOMAINS'] = array('secure', "shop");
 $_SESSION['BLOCKED_SUBDOMAINS'] = array(
 	'42',
 	'admin',
@@ -221,4 +221,3 @@ $_SESSION['BLOCKED_SUBDOMAINS'] = array(
 	'yerrak'
 );
 #endregion
-?>

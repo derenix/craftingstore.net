@@ -4,29 +4,33 @@ defined('_MCSHOP') or die("Security block!");
 class Products extends aDisplayable
 {
 	private $pagination;
-	function __construct(){
+
+	function __construct()
+	{
 		$this->pagination = new Pagination();
 	}
 
-	public function prepareDisplay()	{
+	public function prepareDisplay()
+	{
 		#region falls Suche
-		if($_POST['search'])
+		if ($_POST['search']) {
 			$search = $_POST['search'];
-		if($_GET['search'])
+		}
+		if ($_GET['search']) {
 			$search = urldecode($_GET['search']);
-		if($search){
+		}
+		if ($search) {
 			$searchQuery = '';
 			$parts = explode(' ', $search);
-			foreach($parts as $part)
-			{
-				$searchQuery .= ' AND p.Label LIKE \'%'.mysql_real_escape_string($part).'%\'';
+			foreach ($parts as $part) {
+				$searchQuery .= ' AND p.Label LIKE \'%' . mysql_real_escape_string($part) . '%\'';
 			}
-			$searchPagination = '&search='.urlencode($search);
+			$searchPagination = '&search=' . urlencode($search);
 		}
 		#end
 
 		#region Seitenzahlen
-		$this->pagination->prepare($_SESSION['Index']->db->fetchOne("SELECT COUNT(*) FROM mc_products AS p WHERE (p.ShopId='{$_SESSION['Index']->adminShop->getId()}'$searchQuery) ORDER BY p.Enabled DESC, p.Label ASC"), '?show=Products'.$searchPagination, $first, $number);
+		$this->pagination->prepare(MySqlDatabase::getInstance()->fetchOne("SELECT COUNT(*) FROM mc_products AS p WHERE (p.ShopId='{$_SESSION['Index']->adminShop->getId()}'$searchQuery) ORDER BY p.Enabled DESC, p.Label ASC"), '?show=Products' . $searchPagination, $first, $number);
 		#end
 
 		#region Das Query zum ermitteln der aktuellen Produkte
@@ -35,8 +39,7 @@ class Products extends aDisplayable
 		#end
 
 		#region Itemstatus aktualisieren
-		if(is_array($_POST['enabled']) && $_POST['submit'])
-		{
+		if (is_array($_POST['enabled']) && $_POST['submit']) {
 			startTransaction("
 				mc_products WRITE,
 				mc_products AS p WRITE,
@@ -45,23 +48,17 @@ class Products extends aDisplayable
 				mc_ProductsInProduct WRITE,
 				mc_ProductsInProduct AS iset WRITE");
 			#region Werte übernehmen
-			foreach($_SESSION['Index']->db->iterate($queryShort) as $row)
-			{
+			foreach (MySqlDatabase::getInstance()->query($queryShort) as $row) {
 				#region Produkt deaktivieren
-				if($row->Enabled && !in_array($row->Id, $_POST['enabled']))
-				{
-					$_SESSION['Index']->db->query("UPDATE mc_products SET Enabled='0' WHERE Id='{$row->Id}' AND ShopId='{$_SESSION['Index']->adminShop->getId()}' LIMIT 1");
+				if ($row->Enabled && !in_array($row->Id, $_POST['enabled'])) {
+					MySqlDatabase::getInstance()->query("UPDATE mc_products SET Enabled='0' WHERE Id='{$row->Id}' AND ShopId='{$_SESSION['Index']->adminShop->getId()}' LIMIT 1");
 				}
 				#end
 				#region Produkt aktivieren
-				elseif(!$row->Enabled && in_array($row->Id, $_POST['enabled']))
-				{
-					if($_SESSION['Index']->db->fetchOne("SELECT g.Id FROM mc_products AS p LEFT JOIN mc_productGroups AS g ON g.Id=p.GroupId WHERE p.Id='{$row->Id}' AND p.ShopId='{$_SESSION['Index']->adminShop->getId()}' AND g.ShopId='{$_SESSION['Index']->adminShop->getId()}' LIMIT 1"))
-					{
-						$_SESSION['Index']->db->query("UPDATE mc_products SET Enabled='1' WHERE Id='{$row->Id}' AND ShopId='{$_SESSION['Index']->adminShop->getId()}' LIMIT 1");
-					}
-					else
-					{
+				elseif (!$row->Enabled && in_array($row->Id, $_POST['enabled'])) {
+					if (MySqlDatabase::getInstance()->fetchOne("SELECT g.Id FROM mc_products AS p LEFT JOIN mc_productGroups AS g ON g.Id=p.GroupId WHERE p.Id='{$row->Id}' AND p.ShopId='{$_SESSION['Index']->adminShop->getId()}' AND g.ShopId='{$_SESSION['Index']->adminShop->getId()}' LIMIT 1")) {
+						MySqlDatabase::getInstance()->query("UPDATE mc_products SET Enabled='1' WHERE Id='{$row->Id}' AND ShopId='{$_SESSION['Index']->adminShop->getId()}' LIMIT 1");
+					} else {
 						$ADM_PRODUCTS_SOME_NOT_ACTIVATED = true;
 					}
 				}
@@ -91,17 +88,16 @@ class Products extends aDisplayable
 		$_SESSION['Index']->assign_say('ADM_PRODUCTS_SEARCH_INFO');
 		#end
 
-		if($ADM_PRODUCTS_SOME_NOT_ACTIVATED) $_SESSION['Index']->assign_say('ADM_PRODUCTS_SOME_NOT_ACTIVATED');
+		if ($ADM_PRODUCTS_SOME_NOT_ACTIVATED) $_SESSION['Index']->assign_say('ADM_PRODUCTS_SOME_NOT_ACTIVATED');
 
 		$noGroup = null;
 		$ADM_PRODUCTS_LIST = null;
 		$showEnable = false;
 		$showDisable = false;
 
-		foreach($_SESSION['Index']->db->iterate($query) as $row){
+		foreach (MySqlDatabase::getInstance()->query($query) as $row) {
 			#region Wenn das Item in der Root-Gruppe steht, muss ein anderes Label ermittelt werden
-			if($row->GroupId == 1)
-			{
+			if ($row->GroupId == 1) {
 				$row->GroupLabel = $_SESSION['Index']->say('ADM_ITEM_GROUPS_TOP_NODE');
 			}
 			#end
@@ -109,8 +105,7 @@ class Products extends aDisplayable
 			#region Falls gar kein GroupLabel existiert, das Item aber aktivert ist, wird der Sondertext ausgegeben
 			//Sollte eigentlich nicht mehr auftreten
 			$NoGroup = ($row->GroupLabel == null && $row->Enabled);
-			if($NoGroup && $noGroup === null)
-			{
+			if ($NoGroup && $noGroup === null) {
 				$noGroup = $_SESSION['Index']->say('ADM_PRODUCTS_NO_GROUP');
 				$noGroupInfo = $_SESSION['Index']->say('ADM_PRODUCTS_NO_GROUP_INFO');
 			}
@@ -127,9 +122,9 @@ class Products extends aDisplayable
 				'Points' => $row->Points,
 				'Enabled' => $enabled);
 
-			if($enabled)
+			if ($enabled)
 				$showDisable = true;
-			if(!$enabled)
+			if (!$enabled)
 				$showEnable = true;
 		}
 
@@ -141,16 +136,12 @@ class Products extends aDisplayable
 		$_SESSION['Index']->assign_say('ADM_PRODUCTS_DISABLE_ALL');
 		$_SESSION['Index']->assign_say('ADM_PRODUCTS_DISABLE_ALL_SHORT');
 		#region (Nicht-)Leere Liste anzeigen
-		if($ADM_PRODUCTS_LIST == null)
-		{
+		if ($ADM_PRODUCTS_LIST == null) {
 			$_SESSION['Index']->assign_say('ADM_PRODUCTS_LIST_EMPTY');
-		}
-		else
-		{
+		} else {
 			$_SESSION['Index']->assign('ADM_PRODUCTS_LIST', $ADM_PRODUCTS_LIST);
 		}
 		#end
 		#end
 	}
 }
-?>

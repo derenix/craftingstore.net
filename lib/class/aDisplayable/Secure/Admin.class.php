@@ -5,10 +5,11 @@ class Admin extends aDisplayable
 {
 	public function prepareDisplay()
 	{
-		
-		function humanTiming ($time){
+
+		function humanTiming($time)
+		{
 			$time = time() - $time; // to get the time since that moment
-			$tokens = array (
+			$tokens = array(
 				31536000 => 'YEAR',
 				2592000 => 'MONTH',
 				604800 => 'WEEK',
@@ -17,7 +18,7 @@ class Admin extends aDisplayable
 				60 => 'MINUTE',
 				1 => 'SECOND'
 			);
-			$tokens_plural = array (
+			$tokens_plural = array(
 				31536000 => 'YEARS',
 				2592000 => 'MONTHS',
 				604800 => 'WEEKS',
@@ -30,7 +31,7 @@ class Admin extends aDisplayable
 			foreach ($tokens as $unit => $text) {
 				if ($time < $unit) continue;
 				$numberOfUnits = floor($time / $unit);
-				return array($numberOfUnits,(($numberOfUnits>1)?$tokens_plural[$unit]:$text)); // array(number, NameOfUnit)
+				return array($numberOfUnits, (($numberOfUnits > 1) ? $tokens_plural[$unit] : $text)); // array(number, NameOfUnit)
 			}
 
 		}
@@ -56,34 +57,31 @@ class Admin extends aDisplayable
 		#end
 
 
-
 		#region RSS-Reader for news from the main site
 		$doc = new DOMDocument();
-		if (!$doc->load(NEWS_RSS))
-		{
+		if (!$doc->load(NEWS_RSS)) {
 			setError("News-RSS offline!", __FILE__, __LINE__);
 			$arrFeeds = false;
-		}
-		else {
+		} else {
 			$arrFeeds = array();
-			
+
 			foreach ($doc->getElementsByTagName('item') as $node) {
 				$date_arr = humanTiming(strtotime($node->getElementsByTagName('pubDate')->item(0)->nodeValue));
-				$arrFeeds[] = array ( 
-				'title' => $node->getElementsByTagName('title')->item(0)->nodeValue,
-				'desc' => $node->getElementsByTagName('description')->item(0)->nodeValue,
-				'link' => $node->getElementsByTagName('link')->item(0)->nodeValue,
-				'date' => $_SESSION['Index']->lang->say("TIME_AGO", array($date_arr[0].' '.$_SESSION['Index']->lang->say($date_arr[1])))
+				$arrFeeds[] = array(
+					'title' => $node->getElementsByTagName('title')->item(0)->nodeValue,
+					'desc' => $node->getElementsByTagName('description')->item(0)->nodeValue,
+					'link' => $node->getElementsByTagName('link')->item(0)->nodeValue,
+					'date' => $_SESSION['Index']->lang->say("TIME_AGO", array($date_arr[0] . ' ' . $_SESSION['Index']->lang->say($date_arr[1])))
 				);
-				
+
 			}
 		}
-		
+
 		$_SESSION['Index']->assign_direct("ADM_ADMIN_RSS", $arrFeeds);
 		$_SESSION['Index']->assign_say("ADM_ADMIN_RSS_TITLE");
 		$_SESSION['Index']->assign_say("ADM_ADMIN_TO_ARTICLE");
 		#end
-		
+
 		//TODO:
 
 		/*
@@ -99,4 +97,3 @@ class Admin extends aDisplayable
 		*/
 	}
 }
-?>

@@ -4,6 +4,7 @@ defined('_MCSHOP') or die("Security block!");
 class ItemStats extends aDisplayable
 {
 	private $pagination;
+
 	function __construct()
 	{
 		$this->pagination = new Pagination();
@@ -12,17 +13,17 @@ class ItemStats extends aDisplayable
 	public function prepareDisplay()
 	{
 		$this->pagination->prepare(
-			$_SESSION['Index']->db->fetchOne("SELECT COUNT(*) FROM mc_products WHERE (ShopId='{$_SESSION['Index']->adminShop->getId()}')"),
+			MySqlDatabase::getInstance()->fetchOne("SELECT COUNT(*) FROM mc_products WHERE (ShopId='{$_SESSION['Index']->adminShop->getId()}')"),
 			'?show=Statistics&c=ItemStats', $first, $number);
 
 		$items = array();
-		foreach($_SESSION['Index']->db->iterate("SELECT p.Label,p.Image,p.Points,p.BuyCounter,p.Revenue,ig.Label AS GroupLabel FROM mc_products AS p INNER JOIN mc_productGroups AS ig ON ig.Id=p.GroupId AND ig.ShopId='{$_SESSION['Index']->adminShop->getId()}' WHERE p.ShopId='{$_SESSION['Index']->adminShop->getId()}' ORDER BY p.Revenue DESC, p.BuyCounter DESC, p.Label ASC LIMIT $first,$number") as $row){
+		foreach (MySqlDatabase::getInstance()->query("SELECT p.Label,p.Image,p.Points,p.BuyCounter,p.Revenue,ig.Label AS GroupLabel FROM mc_products AS p INNER JOIN mc_productGroups AS ig ON ig.Id=p.GroupId AND ig.ShopId='{$_SESSION['Index']->adminShop->getId()}' WHERE p.ShopId='{$_SESSION['Index']->adminShop->getId()}' ORDER BY p.Revenue DESC, p.BuyCounter DESC, p.Label ASC LIMIT $first,$number") as $row) {
 			$items[] = array(
 				'Label' => $row->Label,
 				'Image' => Item::getImagePath($row->Image, true),
 				'Points' => $row->Points,
 				'BuyCounter' => $row->BuyCounter,
-				'Revenue' => CurrencyFormatted($row->Revenue/100).' '.CURRENCY_SHORT,
+				'Revenue' => CurrencyFormatted($row->Revenue / 100) . ' ' . CURRENCY_SHORT,
 				'GroupLabel' => $row->GroupLabel
 			);
 		}
@@ -35,4 +36,3 @@ class ItemStats extends aDisplayable
 		$_SESSION['Index']->assign_say('ADM_ITEMSTATS_REVENUE');
 	}
 }
-?>

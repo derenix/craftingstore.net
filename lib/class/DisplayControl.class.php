@@ -10,10 +10,9 @@ class DisplayControl
 	{
 		$classname = DisplayControl::getClassname($name);
 
-		if($this->displayableObjects[$classname])
-		{
-			if($params != null){
-				foreach($params as $key => $value){
+		if ($this->displayableObjects[$classname]) {
+			if ($params != null) {
+				foreach ($params as $key => $value) {
 					$this->displayableObjects[$classname]->$key = $value;
 				}
 			}
@@ -22,12 +21,11 @@ class DisplayControl
 			return;
 		}
 
-		if(class_exists($classname))
-		{
+		if (class_exists($classname)) {
 			$this->displayableObjects[$classname] = new $classname();
 
-			if($params != null){
-				foreach($params as $key => $value){
+			if ($params != null) {
+				foreach ($params as $key => $value) {
 					$this->displayableObjects[$classname]->$key = $value;
 				}
 			}
@@ -48,10 +46,9 @@ class DisplayControl
 	{
 		$classname = DisplayControl::getClassname($name);
 		#region normales Objekt anzeigen
-		if(class_exists($classname))
-		{
+		if (class_exists($classname)) {
 			$_SESSION['Index']->smarty->assign('ContentId', DisplayControl::getIndex($name));
-			$_SESSION['Index']->smarty->Display($classname.'.tpl');
+			$_SESSION['Index']->smarty->Display($classname . '.tpl');
 		}
 		#endregion
 		/*
@@ -64,14 +61,12 @@ class DisplayControl
 		#endregion
 		*/
 		#region mehrere Objekte anzeigen
-		elseif(DisplayControl::allowedTemplateList($classname))
-		{
+		elseif (DisplayControl::allowedTemplateList($classname)) {
 			$_SESSION['Index']->smarty->Display('Content.tpl');
 		}
 		#endregion
 		#region Objekt ist ungültig
-		else
-		{
+		else {
 			setLocation('404');
 			die();
 		}
@@ -82,7 +77,7 @@ class DisplayControl
 	#region public static function ValidTemplate($name)
 	public static function ValidTemplate($tpl_name)
 	{
-		return class_exists($tpl_name);# || class_exists('Admin'.$tpl_name);
+		return class_exists($tpl_name); # || class_exists('Admin'.$tpl_name);
 	}
 	#endregion
 
@@ -106,7 +101,7 @@ class DisplayControl
 		return ($split[1] != null ? $split[1] : 0);
 	}
 	#endregion
-	
+
 	#region public function setDefaultSmarty(&$smarty)
 	public function setDefaultSmarty(&$smarty)
 	{
@@ -124,7 +119,7 @@ class DisplayControl
 	#region public function useAjax($useAjax)
 	public function useAjax($useAjax)
 	{
-		if($this->useAjax == $useAjax)#keine Veränderung
+		if ($this->useAjax == $useAjax) #keine Veränderung
 			return;
 		$this->useAjax = $useAjax;
 
@@ -133,4 +128,3 @@ class DisplayControl
 	}
 	#endregion
 }
-?>

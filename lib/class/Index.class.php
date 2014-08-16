@@ -13,21 +13,47 @@ class Index
 	public $relImgPath = './images/items/';
 	#end
 
-	public $db;
+	/**
+	 * @var Shop
+	 */
 	public $shop;
+
+	/**
+	 * @var Shop
+	 */
 	public $adminShop;
+
+	/**
+	 * @var User
+	 */
 	public $user;
+
+	/**
+	 * @var Smarty
+	 */
 	public $smarty;
+
+	/**
+	 * @var Lang
+	 */
 	public $lang;
+
+	/**
+	 * @var DisplayControl
+	 */
 	public $displayControl;
+
 	#region NestedSet, zur Menü-Verwaltung
+	/**
+	 * @var NestedSet
+	 */
 	public $nstree;
 	#end
-/*
-	#region ContentBoxes
-	public $contentBoxes;
-	#end
-*/
+	/*
+		#region ContentBoxes
+		public $contentBoxes;
+		#end
+	*/
 
 #end
 
@@ -35,12 +61,12 @@ class Index
 	public function __construct()
 	{
 		$this->Version = VERSION;
-		$this->initDatabase();
 		$this->initShop($_SERVER['HTTP_HOST']);
 		$this->initLanguage();
 		$this->initSmarty();
 		$this->initDisplayControl();
 		$this->initUser();
+
 		$this->nstree = $this->createNestedSet($this->shop);
 	}
 	#end
@@ -49,8 +75,7 @@ class Index
 	#region public function CheckVersion()
 	public function CheckVersion()
 	{
-		if($this->Version != VERSION)
-		{
+		if ($this->Version != VERSION) {
 			$_SESSION['Index']->user->Logout();
 			session_destroy();
 			setLocation($_SERVER['REQUEST_URI']);
@@ -72,28 +97,7 @@ class Index
 		$this->displayControl = new DisplayControl();
 	}
 	#end
-	#region private function initDatabase()
-	private function initDatabase()
-	{
-		$this->db = MySqlDatabase::getInstance();
-		$this->connectDatabase();
-	}
-	public function connectDatabase()
-	{
-		if(!$this->db->isConnected())
-		{
-			try
-			{
-				$this->db->connect(SQL_HOST, SQL_USERNAME, SQL_PASSWORD, SQL_DB);
-				$this->db->query("SET NAMES 'utf8'");
-			}
-			catch (Exception $e)
-			{
-				die($e->getMessage());
-			}
-		}
-	}
-	#end
+
 	#region private function initSmarty()
 	private function initSmarty()
 	{
@@ -101,15 +105,15 @@ class Index
 
 		$this->smarty->security = true;
 
-		$this->smarty->compile_dir = DOC_ROOT.'template_c/';
-		$this->smarty->config_dir = DOC_ROOT.'config/';
-		$this->smarty->cache_dir = DOC_ROOT.'cache/';
+		$this->smarty->compile_dir = DOC_ROOT . 'template_c/';
+		$this->smarty->config_dir = DOC_ROOT . 'config/';
+		$this->smarty->cache_dir = DOC_ROOT . 'cache/';
 	}
 	#end
 	#region private function initLanguage()
 	private function initLanguage()
 	{
-		$this->lang = new Lang($this->db);
+		$this->lang = new Lang();
 	}
 	#end
 
@@ -125,48 +129,41 @@ class Index
 	{
 		$ShopId = -1;
 		$sub = getCurrentSubdomain($fqdn);
-		if(!in_array($sub, $_SESSION['BLOCKED_SUBDOMAINS']))
-		{
-			if($sub){
-				$shopInfo = $this->db->fetchOneRow("SELECT Id,Domain FROM mc_shops WHERE Subdomain='".mysql_real_escape_string($sub)."' LIMIT 1");
-				if($shopInfo->Domain){
-					setLocation('',$shopInfo->Domain);
-				}
-				else{
+		if (!in_array($sub, $_SESSION['BLOCKED_SUBDOMAINS'])) {
+			if ($sub) {
+				$shopInfo = MySqlDatabase::getInstance()->fetchOneRow("SELECT Id,Domain FROM mc_shops WHERE Subdomain= :subdomain LIMIT 1", array("subdomain" => $sub));
+				if ($shopInfo->Domain) {
+					setLocation('', $shopInfo->Domain);
+				} else {
 					$ShopId = $shopInfo->Id;
 				}
-			}
-			else{
-				$ShopId = $this->db->fetchOne("SELECT Id FROM mc_shops WHERE Domain='".mysql_real_escape_string($fqdn)."' LIMIT 1");
+			} else {
+				$ShopId = MySqlDatabase::getInstance()->fetchOne("SELECT Id FROM mc_shops WHERE Domain= :domain LIMIT 1", array("domain" => $fqdn));
 			}
 
-			if(!$ShopId)
-			{
+			if (!$ShopId) {
 				//Subdomain wurde nicht gefunden
-				setLocation('404');
-			}
-			else
-			{
+				//setLocation('404');
+			} else {
 				$this->shop = new Shop($ShopId);
-				$this->template = $this->db->fetchOne("SELECT Directory FROM mc_shops AS s LEFT JOIN mc_templates AS t ON s.TemplateId=t.Id WHERE s.Id='{$this->shop->getId()}'");
+				$this->template = MySqlDatabase::getInstance()->fetchOne("SELECT Directory FROM mc_shops AS s LEFT JOIN mc_templates AS t ON s.TemplateId=t.Id WHERE s.Id= :id", array("id" => $this->shop->getId()));
 			}
-		}
-		elseif(!in_array($sub, $_SESSION['ALLOWED_SUBDOMAINS']))
-		{
+		} elseif (!in_array($sub, $_SESSION['ALLOWED_SUBDOMAINS'])) {
 			// Default-Seite ohne Subdomain
-			setLocation('',BASE_DOMAIN);
+			setLocation('', BASE_DOMAIN);
 		}
+
 	}
 	#end
 
 	#region private function initNestedSet()
 	public function createNestedSet(&$shop)
 	{
-		$nstree = new NestedSet($this->db);
+		$nstree = new NestedSet();
 		$nstree->pk = 'Id';
 		$nstree->name = 'Label';
 		$nstree->table = 'mc_productGroups';
-		$nstree->shop = &$shop;
+		$nstree->shop = & $shop;
 		return $nstree;
 	}
 	#end
@@ -183,17 +180,16 @@ class Index
 	{
 		$this->smarty->assign($name, $value);
 	}
+
 	public function assign($name, $value)
 	{
-		if(is_array($value))
-		{
+		if (is_array($value)) {
 			$this->smarty->assign($name, array_map_recursive('htmlspecialchars', $value));
-		}
-		else
-		{
+		} else {
 			$this->smarty->assign($name, htmlspecialchars($value));
 		}
 	}
+
 	/*
 	 * 3 Möglichkeiten:
 		 1. $name = string
@@ -207,32 +203,31 @@ class Index
 	 */
 	public function assign_say($name, $v1 = null, $v2 = null, $specialchars = true)
 	{
-		if($v1 == null)
-		{
+		if ($v1 == null) {
 			$this->smarty->assign($name, $this->lang->say($name, null, $specialchars));
-		}
-		elseif(is_array($v1))
-		{
+		} elseif (is_array($v1)) {
 			$this->smarty->assign($name, $this->lang->say($name, $v1, $specialchars));
-		}
-		else
-		{
+		} else {
 			$this->smarty->assign($name, $this->lang->say($v1, $v2, $specialchars));
 		}
 	}
+
 	public function say($string, $arguments = null, $specialchars = true)
 	{
 		return $this->lang->say($string, $arguments, $specialchars);
 	}
+
 	#end
 
 
-	public function Display(){
+	public function Display()
+	{
 		$this->displayControl->setDefaultSmarty($this->smarty);
 
 		#region Sprachänderung übernehmen
-		if(isset($_GET['setLang']))
+		if (isset($_GET['setLang'])) {
 			$this->lang->setLanguage($_GET['setLang']);
+		}
 		#end
 
 		#Macht die Domain inkl. Subdomain für alle tpl-Dateien verfügbar
@@ -240,30 +235,35 @@ class Index
 		#Und hier nur die Hauptseite
 		$this->assign('BASE_URL', BASE_DOMAIN);
 		$this->assign('DEFAULT_PROTOCOL', DEFAULT_PROTOCOL);
-		#region SECURE_URL zuweisen
-		if(USE_SSL)
-			$this->assign('SECURE_URL', "https://secure.".BASE_DOMAIN);
-		else
-			$this->assign('SECURE_URL', "http://secure.".BASE_DOMAIN);
-		$this->assign('LANG', $this->lang->getLangTag());
-		if($this->shop) $this->assign('SHOP_ID', $this->shop->getId());
-		#end
 
+		#region SECURE_URL zuweisen
+		if (USE_SSL) {
+			$this->assign('SECURE_URL', "https://secure." . BASE_DOMAIN);
+		} else {
+			$this->assign('SECURE_URL', "http://secure." . BASE_DOMAIN);
+		}
+
+		$this->assign('LANG', $this->lang->getLangTag());
+
+		if ($this->shop) {
+			$this->assign('SHOP_ID', $this->shop->getId());
+		}
+		#end
 
 		#Währungsvariablen
 		$_SESSION['Index']->assign_say('POINTSYSTEM');
 		$_SESSION['Index']->assign_say('POINTSYSTEM_SHORT');
-		$_SESSION['Index']->assign_direct('SECURE_URL',SECURE_URL);
+		$_SESSION['Index']->assign_direct('SECURE_URL', SECURE_URL);
 
 		$sub = getCurrentSubdomain();
 
 		#region Login/Register/Admin-Mode
-		if($sub == 'secure'){
-			if(USE_SSL && !$_SERVER['HTTPS']) setLocation(null,null,true);#Kein https? Dann aber schnell!
+		if ($sub == 'secure') {
+			if (USE_SSL && !$_SERVER['HTTPS']) setLocation(null, null, true); #Kein https? Dann aber schnell!
 
 			#region Tell the scripts, where they can find their data
-			$this->smarty->template_dir = DOC_ROOT.'templates/'._MC_ADMIN_TEMPLATE.'/';
-			$this->smarty->assign('templatedir', 'templates/'._MC_ADMIN_TEMPLATE.'/');
+			$this->smarty->template_dir = DOC_ROOT . 'templates/' . _MC_ADMIN_TEMPLATE . '/';
+			$this->smarty->assign('templatedir', 'templates/' . _MC_ADMIN_TEMPLATE . '/');
 			$this->smarty->assign('TEMPLATE', _MC_ADMIN_TEMPLATE);
 			#end
 
@@ -304,42 +304,31 @@ class Index
 			#end
 			#region normaler User
 			// User ist nicht eingeloggt, nur bestimmte Seiten können betrachtet werden
-			if(in_array($_GET['show'], $allowedWithoutUser))
-			{
+			if (in_array($_GET['show'], $allowedWithoutUser)) {
 				$page = $_GET['show'];
-			}
-			// normaler User ist eingeloggt, es dürfen zusätzlich noch weitere Seiten betrachtet werden
-			elseif($this->user->isLoggedIn() && in_array($_GET['show'], $allowedWithUser))
-			{
+			} // normaler User ist eingeloggt, es dürfen zusätzlich noch weitere Seiten betrachtet werden
+			elseif ($this->user->isLoggedIn() && in_array($_GET['show'], $allowedWithUser)) {
 				$page = $_GET['show'];
 			}
 			#end
 			#region Admin-Bereich
 			//Admin hat einen Shop
-			elseif($_SESSION['Index']->adminShop && in_array($_GET['show'], $allowedWithShop))
-			{
+			elseif ($_SESSION['Index']->adminShop && in_array($_GET['show'], $allowedWithShop)) {
 				$page = $_GET['show'];
-			}
-			//Admin hat keinen Shop
-			elseif($_SESSION['CustomerId'] && in_array($_GET['show'],$allowedWithoutShop))
-			{
+			} //Admin hat keinen Shop
+			elseif ($_SESSION['CustomerId'] && in_array($_GET['show'], $allowedWithoutShop)) {
 				$page = $_GET['show'];
 			}
 			#end
 			#region Standardseite anzeigen
 			//Admin hat einen Shop, aber keine Seite in $_GET['show'] angegeben
-			elseif($_SESSION['Index']->adminShop)
-			{
+			elseif ($_SESSION['Index']->adminShop) {
 				$page = 'Admin';
-			}
-			//Admin hat keinen Shop, darf also nur einen Shop erstellen
-			elseif($_SESSION['CustomerId'])
-			{
+			} //Admin hat keinen Shop, darf also nur einen Shop erstellen
+			elseif ($_SESSION['CustomerId']) {
 				$page = 'CreateShop';
-			}
-			//User ist nicht eingeloggt
-			else
-			{
+			} //User ist nicht eingeloggt
+			else {
 				$page = 'Login';
 			}
 			#end
@@ -347,26 +336,21 @@ class Index
 		}
 		#end
 		#region Normal
-		elseif($_GET['show'])
-		{
-			$this->assign('IS_LOGGED_IN',$_SESSION['Index']->user->isLoggedIn());
-			$this->smarty->setTemplateDir(DOC_ROOT.'templates/'.$this->template.'/');
-			$this->smarty->addTemplateDir(DOC_ROOT.'templates/'._MC_TEMPLATE.'/');
-			$this->smarty->assign('templatedir', 'templates/'.$this->template.'/');
+		elseif ($_GET['show']) {
+			$this->assign('IS_LOGGED_IN', $_SESSION['Index']->user->isLoggedIn());
+			$this->smarty->setTemplateDir(DOC_ROOT . 'templates/' . $this->template . '/');
+			$this->smarty->addTemplateDir(DOC_ROOT . 'templates/' . _MC_TEMPLATE . '/');
+			$this->smarty->assign('templatedir', 'templates/' . $this->template . '/');
 			$this->smarty->assign('TEMPLATE', $this->template);
 			$this->displayControl->Display($_GET['show']);
-		}
-		else
-		{
-			$this->assign('IS_LOGGED_IN',$_SESSION['Index']->user->isLoggedIn());
-			$this->smarty->setTemplateDir(DOC_ROOT.'templates/'.$this->template.'/');
-			$this->smarty->addTemplateDir(DOC_ROOT.'templates/'._MC_TEMPLATE.'/');
-			$this->smarty->assign('templatedir', 'templates/'.$this->template.'/');
+		} else {
+			$this->assign('IS_LOGGED_IN', $_SESSION['Index']->user->isLoggedIn());
+			$this->smarty->setTemplateDir(DOC_ROOT . 'templates/' . $this->template . '/');
+			$this->smarty->addTemplateDir(DOC_ROOT . 'templates/' . _MC_TEMPLATE . '/');
+			$this->smarty->assign('templatedir', 'templates/' . $this->template . '/');
 			$this->smarty->assign('TEMPLATE', $this->template);
 			$this->smarty->Display('Main.tpl');
 		}
 		#end
 	}
 }
-
-?>

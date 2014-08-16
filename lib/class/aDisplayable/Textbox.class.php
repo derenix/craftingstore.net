@@ -1,12 +1,12 @@
 <?php
 /************************
-**
-** File:	 	textBox.class.php
-**	Author: 	Rasmus Epha
-**	Date:		08.01.2012
-**	Desc:		Eine Box, die einen beliebigen Text aufnehmen kann
-**
-*************************/
+ **
+ ** File:        textBox.class.php
+ **    Author:    Rasmus Epha
+ **    Date:        08.01.2012
+ **    Desc:        Eine Box, die einen beliebigen Text aufnehmen kann
+ **
+ *************************/
 defined('_MCSHOP') or die("Security block!");
 
 
@@ -21,5 +21,3 @@ class Textbox extends aContentBox
 		$_SESSION['Index']->assign('TEXTBOX_CONTENT', $this->content);
 	}
 }
-
-?>
