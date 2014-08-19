@@ -1,6 +1,16 @@
 <?php
 defined('_LOGIN') or die("Security block!");
-
+?>
+	<section class="content-header">
+		<h1>
+			Dashboard
+		</h1>
+		<ol class="breadcrumb">
+			<li><a href="index.php?p=1"><i class="fa fa-dashboard"></i> Home</a></li>
+		</ol>
+	</section>
+	<section class="content">
+<?php
 
 echo '<div style="width:400px;margin:auto;">';
 

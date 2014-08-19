@@ -2,6 +2,19 @@
 defined('_LOGIN') or die("Security block!");
 define('_DOMAIN', '.craftingstore.net');
 
+?>
+	<section class="content-header">
+		<h1>
+			Shop Verwaltung
+		</h1>
+		<ol class="breadcrumb">
+			<li><a href="index.php?p=1"><i class="fa fa-dashboard"></i> Home</a></li>
+			<li class="active">Shop Verwaltung</li>
+		</ol>
+	</section>
+	<section class="content">
+<?php
+
 if (isset($_GET['go']) && isNumber($_GET['go'])) {
 	$ShopId = $_GET['go'];
 	$CustomerId = $db->fetchOne("SELECT CustomersId FROM mc_shops WHERE Id= :id Limit 1", array("id" => $ShopId));
@@ -13,19 +26,13 @@ if (isset($_GET['go']) && isNumber($_GET['go'])) {
 		$_SESSION['Index'] = new Index();
 		$_SESSION['Index']->adminShop = new Shop($ShopId);
 
-		setLocation('');
+		setLocation("", BASE_DOMAIN);
 	}
 }
 
 echo <<<html
-<style type="text/css">
-.center{
-	text-align: center;
-}
-</style>
-
-<h3>Shop-Administration</h3><br />
-<table border="1">
+<table class="table table-hover">
+<thead>
 <tr>
 	<th>Shop-Name</th>
 	<th>Domain</th>
@@ -35,6 +42,7 @@ echo <<<html
 	<th>Online</th>
 	<th></th>
 </tr>
+</thead>
 html;
 $result = $db->query("SELECT
 	s.Id,

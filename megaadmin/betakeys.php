@@ -1,3 +1,13 @@
+<section class="content-header">
+	<h1>
+		Beta Mails
+	</h1>
+	<ol class="breadcrumb">
+		<li><a href="index.php?p=1"><i class="fa fa-dashboard"></i> Home</a></li>
+		<li class="active">Beta Mails</li>
+	</ol>
+</section>
+<section class="content">
 <?php
 
 function sendMail(MySqlDatabase $db, $mail)
@@ -55,8 +65,8 @@ echo '
 <form action="?p=' . $_GET['p'] . '" method="post">
 <h3>Betamails senden</h3>
 Anzahl der Mails, die gesendet werden sollen<br/>
-<input type="text" name="anzahlMails" value="' . htmlspecialchars($anzahlMails) . '" /><br/>
-<input type="submit" />
+<input class="form-control" type="text" name="anzahlMails" value="' . htmlspecialchars($anzahlMails) . '" /><br/>
+<input class="btn btn-primary" type="submit" />
 </form>';
 
 if (preg_match('/^([0]*)([1-9]{1}\d*)$/', $anzahlMails)) {

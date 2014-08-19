@@ -1,5 +1,17 @@
 <?php
 defined('_LOGIN') or die("Security block!");
+?>
+<section class="content-header">
+	<h1>
+		Auszahlungsübersicht
+	</h1>
+	<ol class="breadcrumb">
+		<li><a href="index.php?p=1"><i class="fa fa-dashboard"></i> Home</a></li>
+		<li class="active">Auszahlungsübersicht</li>
+	</ol>
+</section>
+<section class="content">
+<?php
 
 if (isset($_GET['accept']) && isNumber($_GET['accept'])) {
 	$acceptAccountId = $_GET['accept'];
@@ -31,8 +43,9 @@ if (isset($_GET['accept']) && isNumber($_GET['accept'])) {
 }
 
 
-echo 'Auszahlungsübersicht:<br />
-<table border="1" style="white-space: nowrap;">
+echo '
+<table class="table table-hover">
+<thead>
 <tr>
 	<th>Buchung</th>
 	<th>Valuta</th>
@@ -41,7 +54,8 @@ echo 'Auszahlungsübersicht:<br />
 	<th>Paypal-<br />Empfängeradresse</th>
 	<th>Betrag</th>
 	<th></th>
-</tr>';
+</tr>
+</thead>';
 $erledigteAuszahlungen = array();
 $result = $db->query("SELECT
 c1.Id,
@@ -72,7 +86,7 @@ foreach ($result as $row) {
 	<td>' . $row->CustomerNumber . '</td>
 	<td>' . $row->PayoutMail . '</td>
 	<td>' . str_replace('.', ',', sprintf('%01.2f', $row->Difference / 100)) . ' €</td>
-	<td>' . ($row->BookingTime == 0 ? '<a href="?p=' . $_GET['p'] . '&amp;accept=' . $row->Id . '" title="Auszahlung als Bestätigt markieren">Ausstehend</a>' : 'Erledigt') . '</td>
+	<td>' . ($row->BookingTime == 0 ? '<a href="?p=' . $_GET['p'] . '&amp;accept=' . $row->Id . '" title="Auszahlung als Bestätigt markieren">Ausstehend</a>' : '<span class="label label-success ">Erledigt') . '</td>
 </tr>';
 }
 if (!$result) {

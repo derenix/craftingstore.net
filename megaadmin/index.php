@@ -22,6 +22,11 @@ require_once(DOC_ROOT . '/lib/class/mysqlresultset.class.php');
 
 session_start();
 
+if(isset($_GET['logout'])) {
+	unset($_SESSION['LoginDone']);
+	header("Location: /megaadmin/");
+}
+
 $db = MySqlDatabase::getInstance();
 if (!$db->isConnected()) {
 	try {
@@ -32,7 +37,7 @@ if (!$db->isConnected()) {
 }
 
 if (!isset($_SESSION['LoginDone'])) { // changed for github
-	if (sha1($_POST['user']) == 'dea3e0200ce8afadd6cd4c00533b76c991be5e14' && sha1($_POST['pw']) == 'dea3e0200ce8afadd6cd4c00533b76c991be5e14') {
+	if (isset($_POST['user']) && sha1($_POST['user']) == 'dea3e0200ce8afadd6cd4c00533b76c991be5e14' && sha1($_POST['pw']) == 'dea3e0200ce8afadd6cd4c00533b76c991be5e14') {
 		$_SESSION['LoginDone'] = 1;
 
 		header("Location: /megaadmin/?p={$_GET['p']}");
@@ -48,128 +53,39 @@ if (!isset($_SESSION['LoginDone'])) { // changed for github
 	}
 }
 
-echo '<?xml version="1.0" encoding="utf-8"?>';
-?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="de" lang="de" dir="ltr">
-<head>
-	<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
-	<meta http-equiv="cache-control" content="no-cache"/>
-	<link rel="shortcut icon" type="image/x-icon" href="favicon.ico"/>
-	<title>Mega-Admin Menü</title>
-	<style type="text/css">
-		body > div {
-			margin: 0 auto;
-			width: 80%;
-		}
+include("_header.html");
 
-		table.menu {
-			margin: 10px auto 20px;
-			background-color: #ddd;
-			border-spacing: 10px;
-			border-radius: 11px;
-		}
-
-		table.menu a {
-			color: #000;
-			text-decoration: none;
-		}
-
-		table.menu a:hover {
-			text-decoration: underline;
-		}
-
-		table.menu td {
-			border-radius: 7px;
-			width: 100px;
-			height: 80px;
-			text-align: center;
-			vertical-align: middle;
-			background-color: #fff;
-			padding: 5px;
-			border: 2px solid #999;
-		}
-
-		table.menu td.active {
-			border-color: #fff;
-			background-color: #aaa;
-		}
-
-		table.lang {
-			border-spacing: 0;
-		}
-
-		table.lang tr:nth-child(2n) > td {
-			border-top: 1px solid #000;
-		}
-
-		table.lang td {
-			padding: 4px 4px;
-		}
-
-		table.lang tr:nth-child(2n) > * {
-			background-color: #eee;
-		}
-
-		table.lang tr:nth-child(2n+1) > * {
-			background-color: #ddd;
-		}
-
-		table.lang tr.empty:nth-child(2n) > * {
-			background-color: #FF5A5A;
-		}
-
-		table.lang tr.empty:nth-child(2n+1) > * {
-			background-color: #FF7878;
-		}
-
-		table.lang input,
-		table.lang textarea {
-			border: 1px solid #ccc;
-			margin: 3;
-			padding: 2;
-			width: 100%;
-		}
-
-		table.lang input:focus,
-		table.lang textarea {
-			border: 1px solid #666;
-		}
-	</style>
-</head>
-<body>
-<div>
-	<?php
-	if ($output >= 0) {
-		//Menü anzeigen
-		echo '<table class="menu"><tr>';
-		foreach ($menu as $key => $value) {
-			if (is_array($value))
-				echo '<td' . ($key == $output ? ' class="active"' : '') . '><a href="?p=' . $key . '">' . $value[0] . '</a></td>';
-		}
-		echo '</tr></table>';
-	}
-
-	switch ($output) {
-		case -1: //Login ist nicht erforderlich
-			?>
+switch ($output) {
+	case -1: //Login ist nicht erforderlich
+		?>
+		<div class="form-box" id="login-box">
+			<div class="header bg-blue">Sign In</div>
 			<form action="" method="post">
-				Benutzername: <input type="text" name="user" value=""/><br/>
-				Passwort: <input type="password" name="pw" value=""/><br/>
-				<input type="submit" value="einloggen"/>
+				<div class="body bg-gray">
+					<div class="form-group">
+						<input type="text" name="user" class="form-control" placeholder="User ID">
+					</div>
+					<div class="form-group">
+						<input type="password" name="pw" class="form-control" placeholder="Password">
+					</div>
+				</div>
+				<div class="footer">
+					<button type="submit" class="btn bg-blue btn-block">Sign me in</button>
+				</div>
 			</form>
-			<?php
-			break;
-		case -2: //Login war erfolgreich, Link zum weiterleiten
-			echo <<<html
+		</div>
+		<?php
+		break;
+	case -2: //Login war erfolgreich, Link zum weiterleiten
+		echo <<<html
 Du wurdest erfolgreich eingeloggt.<br />
 <a href="/megaadmin/?p={$_GET['p']}">weiter</a>
 html;
-			break;
-		default:
-			require_once($menu[$output][1]);
-			break;
-	}
-	?>
-</div>
-</body>
-</html>
+		break;
+	default:
+		require_once($menu[$output][1]);
+		break;
+}
+
+include("_footer.html");
+?>
