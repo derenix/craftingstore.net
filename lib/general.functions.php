@@ -99,12 +99,13 @@ function setLocation($params = null, $host = null, $useHttps = null)
 	if ($params === null) $params = $_SERVER['REQUEST_URI'];
 	if ($host === null) $host = $_SERVER['HTTP_HOST'];
 
-	if ($params[0] != null #mindestens 1 Zeichen lang
+	if (strlen($params) > 0 && $params[0] != null #mindestens 1 Zeichen lang
 		&& ($params[0] == '\\' || $params[0] == '/')
 	) #erstes Zeichen / oder \
 	{
 		$params = substr($params, 1); #erstes Zeichen entfernen
 	}
+
 	header('Location: ' . $protocol . '://' . $host . '/' . $params);
 	die();
 }

@@ -222,7 +222,10 @@ class Cart extends aDisplayable
 				$_SESSION['UserCart'][$ProdId]['Amount'] += $Amount;
 				$_SESSION['UserCart'][$ProdId]['Points'] = $prodInfo->Points * $_SESSION['UserCart'][$ProdId]['Amount'];
 			} else {
-				if ($prodInfo->DisableDuringCooldown) $Amount = 1;
+				if ($prodInfo->DisableDuringCooldown) {
+					$Amount = 1;
+				}
+
 				$_SESSION['UserCart'][$ProdId] = array(
 					'Label' => $prodInfo->Label,
 					'Amount' => $Amount,
